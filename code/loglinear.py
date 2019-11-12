@@ -28,9 +28,13 @@ def classifier_output(x, params):
     Return the output layer (class probabilities) 
     of a log-linear classifier with given params on input x.
     """
-    W,b = params
+    W, b = params
     # YOUR CODE HERE.
+
+    pred = np.einsum("i,ij->j", x, W) + b
+    probs = softmax(pred)
     return probs
+
 
 def predict(x, params):
     """
@@ -42,6 +46,7 @@ def predict(x, params):
     b: vector
     """
     return np.argmax(classifier_output(x, params))
+
 
 def loss_and_gradients(x, y, params):
     """
@@ -55,9 +60,29 @@ def loss_and_gradients(x, y, params):
     gW: matrix, gradients of W
     gb: vector, gradients of b
     """
-    W,b = params
+    W, b = params
     # YOU CODE HERE
-    return loss,[gW,gb]
+
+    probs = classifier_output(x, params)
+
+    y_one_hot = np.zeros(probs.shape)
+    y_one_hot[y] = 1
+
+    loss = cross_entropy_loss(probs, y)
+    gh = y_one_hot - probs
+    gW = np.einsum("j,i->ji", gh, x)
+    gb = gh
+
+    return loss, [gW, gb]
+
+
+def cross_entropy_loss(probs, y_index):
+    y_one_hot = np.zeros(probs.shape)
+    y_one_hot[y_index] = 1
+
+    loss = np.sum(-np.log(probs) * y_one_hot)
+    return loss
+
 
 def create_classifier(in_dim, out_dim):
     """
@@ -66,7 +91,8 @@ def create_classifier(in_dim, out_dim):
     """
     W = np.zeros((in_dim, out_dim))
     b = np.zeros(out_dim)
-    return [W,b]
+    return [W, b]
+
 
 if __name__ == '__main__':
     # Sanity checks for softmax. If these fail, your softmax is definitely wrong.
@@ -88,23 +114,21 @@ if __name__ == '__main__':
     # If they pass, it is likely, but not certainly, correct.
     from grad_check import gradient_check
 
-    W,b = create_classifier(3,4)
+    W, b = create_classifier(3, 4)
 
     def _loss_and_W_grad(W):
         global b
-        loss,grads = loss_and_gradients([1,2,3],0,[W,b])
-        return loss,grads[0]
+        loss,grads = loss_and_gradients([1, 2, 3], 0, [W, b])
+        return loss, grads[0]
 
     def _loss_and_b_grad(b):
         global W
-        loss,grads = loss_and_gradients([1,2,3],0,[W,b])
-        return loss,grads[1]
+        loss,grads = loss_and_gradients([1, 2, 3], 0, [W, b])
+        return loss, grads[1]
 
     for _ in range(10):
-        W = np.random.randn(W.shape[0],W.shape[1])
+        W = np.random.randn(W.shape[0], W.shape[1])
         b = np.random.randn(b.shape[0])
         gradient_check(_loss_and_b_grad, b)
         gradient_check(_loss_and_W_grad, W)
 
-
-    
