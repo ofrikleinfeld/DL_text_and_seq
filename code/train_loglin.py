@@ -30,7 +30,10 @@ def accuracy_on_dataset(dataset, params):
         # accuracy is (correct_predictions / all_predictions)
 
         pred_label = ll.predict(features, params)
-        good += 1 if pred_label == label else bad +1
+        if pred_label == label:
+            good += 1
+        else:
+            bad += 1
 
     return good / (good + bad)
 
@@ -49,8 +52,8 @@ def train_classifier(train_data, dev_data, num_iterations, learning_rate, params
         cum_loss = 0.0  # total loss in this iteration.
         random.shuffle(train_data)
         for label, features in train_data:
-            x = feats_to_vec(features) # convert features to a vector.
-            y = label                  # convert the label to number if needed.
+            x = features
+            y = label
             loss, grads = ll.loss_and_gradients(x, y, params)
             cum_loss += loss
             # YOUR CODE HERE
@@ -62,6 +65,8 @@ def train_classifier(train_data, dev_data, num_iterations, learning_rate, params
 
             W -= learning_rate * gW
             b -= learning_rate * gb
+
+            params = [W, b]
 
         train_loss = cum_loss / len(train_data)
         train_accuracy = accuracy_on_dataset(train_data, params)
@@ -85,8 +90,8 @@ if __name__ == '__main__':
     # define training hyper parameters
     in_dim = len(F2I)
     out_dim = len(L2I)
-    num_iterations = 10
-    learning_rate = 1e-3
+    num_iterations = 50
+    learning_rate = 5e-3
 
     # initiate classifier parameters
     W, b = ll.create_classifier(in_dim, out_dim)
@@ -94,5 +99,5 @@ if __name__ == '__main__':
     b = np.random.randn(b.shape[0])
 
     # train
-    trained_params = train_classifier(train_data, dev_data, num_iterations, learning_rate, params)
+    trained_params = train_classifier(train_data, dev_data, num_iterations, learning_rate, [W, b])
 
