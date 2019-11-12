@@ -90,8 +90,8 @@ if __name__ == '__main__':
     # define training hyper parameters
     in_dim = len(F2I)
     out_dim = len(L2I)
-    num_iterations = 100
-    learning_rate = 1e-3
+    num_iterations = 50
+    learning_rate = 5e-3
 
     # initiate classifier parameters
     W, b = ll.create_classifier(in_dim, out_dim)
