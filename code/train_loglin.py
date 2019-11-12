@@ -12,7 +12,13 @@ STUDENT = {'name': "Ofri Kleinfeld",
 def feats_to_vec(features):
     # YOUR CODE HERE.
     # Should return a numpy vector of features.
-    return None
+    f_vec = np.zeros(len(F2I))
+    for bigram in features:
+        f_index = F2I.get(bigram, None)
+        if f_index is not None:
+            f_vec[f_index] += 1
+
+    return f_vec
 
 
 def accuracy_on_dataset(dataset, params):
