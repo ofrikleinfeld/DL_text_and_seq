@@ -60,7 +60,29 @@ def loss_and_gradients(x, y, params):
     gb_tag: vector, gradients of b_tag
     """
     # YOU CODE HERE
-    return ...
+    W, b, U, b_tag = params
+
+    probs, hiddens = classifier_output(x, params)
+    z, h, o = hiddens
+
+    y_one_hot = np.zeros(probs.shape)
+    y_one_hot[y] = 1
+    loss = cross_entropy_loss(probs, y)
+
+    # backprop part
+    # gradients with respect to layers inputs
+    g_o = probs - y_one_hot
+    g_h = mat_vec_mul_reverse(g_o, U)
+    g_z = g_h * tanh_derivative(h)
+
+    # gradients with respect to parameters
+    gW = vec_and_vec_to_mat_mul(g_z, x)
+    gb = g_z
+    gU = vec_and_vec_to_mat_mul(g_o, h)
+    gb_tag = g_o
+
+    return loss, [gW, gb, gU, gb_tag]
+
 
 def create_classifier(in_dim, hid_dim, out_dim):
     """
