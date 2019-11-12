@@ -52,8 +52,8 @@ def train_classifier(train_data, dev_data, num_iterations, learning_rate, params
         cum_loss = 0.0  # total loss in this iteration.
         random.shuffle(train_data)
         for label, features in train_data:
-            x = feats_to_vec(features) # convert features to a vector.
-            y = label                  # convert the label to number if needed.
+            x = features
+            y = label
             loss, grads = ll.loss_and_gradients(x, y, params)
             cum_loss += loss
             # YOUR CODE HERE
@@ -65,6 +65,8 @@ def train_classifier(train_data, dev_data, num_iterations, learning_rate, params
 
             W -= learning_rate * gW
             b -= learning_rate * gb
+
+            params = [W, b]
 
         train_loss = cum_loss / len(train_data)
         train_accuracy = accuracy_on_dataset(train_data, params)
