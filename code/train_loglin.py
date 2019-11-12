@@ -61,9 +61,9 @@ def train_classifier(train_data, dev_data, num_iterations, learning_rate, params
             # and the learning rate.
 
             new_params = []
-            for i in range(len(params)):
-                current_param = params[i]
-                param_grad = grads[i]
+            for j in range(len(params)):
+                current_param = params[j]
+                param_grad = grads[j]
                 updated_param = current_param - learning_rate * param_grad
                 new_params.append(updated_param)
 
@@ -95,8 +95,8 @@ if __name__ == '__main__':
     learning_rate = 5e-3
 
     # initiate classifier parameters
-    W, b = ll.create_classifier(in_dim, out_dim)
+    params = ll.create_classifier(in_dim, out_dim)
 
     # train
-    trained_params = train_classifier(train_data, dev_data, num_iterations, learning_rate, [W, b])
+    trained_params = train_classifier(train_data, dev_data, num_iterations, learning_rate, params)
 
