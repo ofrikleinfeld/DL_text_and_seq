@@ -73,7 +73,7 @@ def loss_and_gradients(x, y, params):
     # gradients with respect to layers inputs
     g_o = probs - y_one_hot
     g_h = mat_vec_mul_reverse(g_o, U)
-    g_z = g_h * tanh_derivative(h)
+    g_z = g_h * tanh_derivative(z)
 
     # gradients with respect to parameters
     gW = vec_and_vec_to_mat_mul(g_z, x)
