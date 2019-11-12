@@ -71,6 +71,7 @@ def tanh_derivative_check():
 
 
 def mlp_check():
+    print("MLP (one hidden layer) gradient checks")
     from mlp1 import create_classifier, loss_and_gradients as mlp1_loss_and_grad
     from train_mlp1 import randomly_initialize_params
     in_dim, hid_dim, out_dim = 5, 3, 2
@@ -105,8 +106,146 @@ def mlp_check():
         gradient_check(_loss_and_b_tag_grad, b_tag)
 
 
+def mlpn_loglinear_check():
+    import mlpn
+    dims = [20, 3]
+    params = mlpn.create_classifier(dims)
+
+    x = np.random.randn(dims[0], )
+    y = 0
+
+    print("MLP arbitrary layers gradient check (special case of log linear model")
+    for i in range(5):
+        def _loss_and_W_grad(W_):
+            current_linear = params[0]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = W_
+            new_linear.b = current_linear.b
+            new_params = [new_linear] + params[1:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[0]
+
+        def _loss_and_b_grad(b_):
+            current_linear = params[0]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = current_linear.w
+            new_linear.b = b_
+            new_params = [new_linear] + params[1:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[1]
+
+        print(f"Gradients checks for random initialization {i+1}")
+        W = params[0].w
+        gradient_check(_loss_and_W_grad, W)
+        b = params[0].b
+        gradient_check(_loss_and_b_grad, b)
+
+
+def mlpn_2_hidden_check():
+    import mlpn
+    dims = [20, 10, 5, 2]
+    params = mlpn.create_classifier(dims)
+
+    x = np.random.randn(dims[0], )
+    y = 0
+
+    print("MLP arbitrary layers gradient check (special case of 2 hidden layers model")
+    for i in range(5):
+        def _loss_and_W1_grad(W1_):
+            current_linear = params[0]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = W1_
+            new_linear.b = current_linear.b
+            new_params = [new_linear] + params[1:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[0]
+
+        def _loss_and_b1_grad(b1_):
+            current_linear = params[0]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = current_linear.w
+            new_linear.b = b1_
+            new_params = [new_linear] + params[1:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[1]
+
+        def _loss_and_W2_grad(W2_):
+            current_linear = params[2]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = W2_
+            new_linear.b = current_linear.b
+            new_params = params[:2] + [new_linear] + params[3:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[2]
+
+        def _loss_and_b2_grad(b2_):
+            current_linear = params[2]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = current_linear.w
+            new_linear.b = b2_
+            new_params = params[:2] + [new_linear] + params[3:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[3]
+
+        def _loss_and_W3_grad(W3_):
+            current_linear = params[4]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = W3_
+            new_linear.b = current_linear.b
+            new_params = params[:4] + [new_linear] + params[5:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[4]
+
+        def _loss_and_b3_grad(b3_):
+            current_linear = params[4]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = current_linear.w
+            new_linear.b = b3_
+            new_params = params[:4] + [new_linear] + params[5:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[5]
+
+
+        print(f"Gradients checks for random initialization {i+1}")
+        W1 = params[0].w
+        gradient_check(_loss_and_W1_grad, W1)
+
+        b1 = params[0].b
+        gradient_check(_loss_and_b1_grad, b1)
+
+        W2 = params[2].w
+        gradient_check(_loss_and_W2_grad, W2)
+
+        b2 = params[2].b
+        gradient_check(_loss_and_b2_grad, b2)
+
+        W3 = params[4].w
+        gradient_check(_loss_and_W3_grad, W3)
+
+        b3 = params[4].b
+        gradient_check(_loss_and_b3_grad, b3)
+
+
 if __name__ == '__main__':
     # If these fail, your code is definitely wrong.
     sanity_check()
     tanh_derivative_check()
     mlp_check()
+    mlpn_loglinear_check()
+    mlpn_2_hidden_check()
