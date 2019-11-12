@@ -72,14 +72,9 @@ def tanh_derivative_check():
 
 def mlp_check():
     from mlp1 import create_classifier, loss_and_gradients as mlp1_loss_and_grad
+    from train_mlp1 import randomly_initialize_params
     in_dim, hid_dim, out_dim = 5, 3, 2
     initialized_params = create_classifier(in_dim=in_dim, hid_dim=hid_dim, out_dim=out_dim)
-
-    def randomly_initialize_params(params):
-        new_params = []
-        for parameter in params:
-            new_params.append(np.random.randn(*parameter.shape))
-        return new_params
 
     x = np.random.randn(in_dim, )
     y = 0
