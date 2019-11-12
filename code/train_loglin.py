@@ -30,7 +30,10 @@ def accuracy_on_dataset(dataset, params):
         # accuracy is (correct_predictions / all_predictions)
 
         pred_label = ll.predict(features, params)
-        good += 1 if pred_label == label else bad +1
+        if pred_label == label:
+            good += 1
+        else:
+            bad += 1
 
     return good / (good + bad)
 
