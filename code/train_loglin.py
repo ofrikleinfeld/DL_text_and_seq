@@ -70,7 +70,22 @@ if __name__ == '__main__':
     # and call train_classifier.
     
     # ...
-   
-    params = ll.create_classifier(in_dim, out_dim)
+
+    # load training and dev data
+    train_data = [(L2I[l], feats_to_vec(bigrams)) for l, bigrams in TRAIN]
+    dev_data = [(L2I[l], feats_to_vec(bigrams)) for l, bigrams in DEV]
+
+    # define training hyper parameters
+    in_dim = len(F2I)
+    out_dim = len(L2I)
+    num_iterations = 10
+    learning_rate = 1e-3
+
+    # initiate classifier parameters
+    W, b = ll.create_classifier(in_dim, out_dim)
+    W = np.random.randn(W.shape[0], W.shape[1])
+    b = np.random.randn(b.shape[0])
+
+    # train
     trained_params = train_classifier(train_data, dev_data, num_iterations, learning_rate, params)
 
