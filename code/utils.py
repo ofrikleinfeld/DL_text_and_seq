@@ -11,7 +11,7 @@ def read_data(fname):
         for line in f:
             label, text = line.strip().lower().split("\t", 1)
             data.append((label, text))
-            
+
     return data
 
 
@@ -32,6 +32,7 @@ DATA_DIR = os.path.join(os.path.curdir, "../", "data")
 
 TRAIN = create_dataset("train", text_to_bigrams)
 DEV = create_dataset("dev", text_to_bigrams)
+TEST = create_dataset("test", text_to_bigrams)
 
 # TRAIN = create_dataset("train", text_to_unigrams)
 # DEV = create_dataset("dev", text_to_unigrams)
