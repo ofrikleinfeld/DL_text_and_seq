@@ -6,9 +6,8 @@ from collections import Counter
 
 def read_data(fname):
     data = []
-    absolute_fame = os.path.join(DATA_DIR, fname)
 
-    for line in open(absolute_fame, "r", encoding="utf8"):
+    for line in open(fname, "r", encoding="utf8"):
         label, text = line.strip().lower().split("\t", 1)
         data.append((label, text))
     return data
@@ -18,9 +17,22 @@ def text_to_bigrams(text):
     return ["%s%s" % (c1, c2) for c1, c2 in zip(text, text[1:])]
 
 
+def text_to_unigrams(text):
+    return [c for c in text]
+
+
+def create_dataset(filename, feature_function):
+    path = os.path.join(DATA_DIR, filename)
+    return [(l, feature_function(t)) for l, t in read_data(path)]
+
+
 DATA_DIR = os.path.join(os.path.curdir, "../", "data")
-TRAIN = [(l, text_to_bigrams(t)) for l, t in read_data("train")]
-DEV = [(l, text_to_bigrams(t)) for l, t in read_data("dev")]
+
+TRAIN = create_dataset("train", text_to_bigrams)
+DEV = create_dataset("dev", text_to_bigrams)
+
+# TRAIN = create_dataset("train", text_to_unigrams)
+# DEV = create_dataset("dev", text_to_unigrams)
 
 fc = Counter()
 for l, feats in TRAIN:
