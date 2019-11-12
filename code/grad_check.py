@@ -58,6 +58,59 @@ def sanity_check():
     print("")
 
 
+def tanh_derivative_check():
+    from mlp1 import tanh, tanh_derivative
+
+    tanh_f = lambda x: (np.sum(tanh(x)), tanh_derivative(x))
+
+    print("Checking tanh function gradient")
+    gradient_check(tanh_f, np.array(123.456))      # scalar test
+    gradient_check(tanh_f, np.random.randn(3,))    # 1-D test
+    gradient_check(tanh_f, np.random.randn(4, 5))   # 2-D test
+    print("")
+
+
+# def mlp_check():
+#     from mlp1 import create_classifier, loss_and_gradients as mlp1_loss_and_grad
+#     in_dim, hid_dim, out_dim = 5, 3, 2
+#     initialized_params = create_classifier(in_dim=in_dim, hid_dim=hid_dim, out_dim=out_dim)
+#
+#     def randomly_initialize_params(params):
+#         new_params = []
+#         for parameter in params:
+#             new_params.append(np.random.randn(*parameter.shape))
+#         return new_params
+#
+#     x = [1, 2, 3, 4, 5]
+#     y = 0
+#     for i in range(len(initialized_params)):
+#         # random_params = randomly_initialize_params(initialized_params)
+#         W, b, U, b_tag = initialized_params
+#
+#         def _loss_and_W_grad(W_):
+#             loss, grads = mlp1_loss_and_grad(x, y, [W_, b, U, b_tag])
+#             return loss, grads[0]
+#
+#         def _loss_and_b_grad(b_):
+#             loss, grads = mlp1_loss_and_grad(x, y, [W, b_, U, b_tag])
+#             return loss, grads[1]
+#
+#         def _loss_and_U_grad(U_):
+#             loss, grads = mlp1_loss_and_grad(x, y, [W, b, U_, b_tag])
+#             return loss, grads[2]
+#
+#         def _loss_and_b_tag_grad(b_tag_):
+#             loss, grads = mlp1_loss_and_grad(x, y, [W, b, U, b_tag_])
+#             return loss, grads[3]
+#
+#         # gradient_check(_loss_and_W_grad, W)
+#         # gradient_check(_loss_and_b_grad, b)
+#         gradient_check(_loss_and_U_grad, U)
+#         gradient_check(_loss_and_b_tag_grad, b_tag)
+
+
 if __name__ == '__main__':
     # If these fail, your code is definitely wrong.
     sanity_check()
+    tanh_derivative_check()
+    # mlp_check()
