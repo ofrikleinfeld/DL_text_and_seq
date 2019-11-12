@@ -105,8 +105,37 @@ def mlp_check():
         gradient_check(_loss_and_b_tag_grad, b_tag)
 
 
+def mlpn_loglinear_check():
+    import mlpn
+    dims = [20, 3]
+    params = mlpn.create_classifier(dims)
+
+    x = np.random.randn(dims[0], )
+    y = 0
+
+    for i in range(5):
+        def _loss_and_W_grad(W_):
+            current_linear = params[0]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = W_
+            new_linear.b = current_linear.b
+            new_params = [new_linear] + params[1:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[0]
+
+        print(f"Gradients checks for random initialization {i+1}")
+        W = params[0].w
+        gradient_check(_loss_and_W_grad, W)
+        # gradient_check(_loss_and_b_grad, b)
+        # gradient_check(_loss_and_U_grad, U)
+        # gradient_check(_loss_and_b_tag_grad, b_tag)
+
+
 if __name__ == '__main__':
     # If these fail, your code is definitely wrong.
-    sanity_check()
-    tanh_derivative_check()
-    mlp_check()
+    # sanity_check()
+    # tanh_derivative_check()
+    # mlp_check()
+    mlpn_loglinear_check()
