@@ -1,7 +1,8 @@
 import numpy as np
 
-STUDENT={'name': 'YOUR NAME',
-         'ID': 'YOUR ID NUMBER'}
+STUDENT={'name': 'Ofri Kleinfeld',
+         'ID': '302893680'}
+
 
 def gradient_check(f, x):
     """ 
@@ -9,7 +10,7 @@ def gradient_check(f, x):
     - f should be a function that takes a single argument and outputs the cost and its gradients
     - x is the point (numpy array) to check the gradient at
     """ 
-    fx, grad = f(x) # Evaluate function value at original point
+    fx, grad = f(x)  # Evaluate function value at original point
     h = 1e-4
 
     # Iterate over all indexes in x
@@ -20,7 +21,15 @@ def gradient_check(f, x):
         ### modify x[ix] with h defined above to compute the numerical gradient.
         ### if you change x, make sure to return it back to its original state for the next iteration.
         ### YOUR CODE HERE:
-        raise NotImplementedError
+        x_plus_h = np.copy(x)
+        x_plus_h[ix] += h
+        fx_plus_h, _ = f(x_plus_h)
+
+        x_minus_h = np.copy(x)
+        x_minus_h[ix] -= h
+        fx_minus_h, _ = f(x_minus_h)
+
+        numeric_gradient = (fx_plus_h - fx_minus_h) / (2 * h)
         ### END YOUR CODE
 
         # Compare gradients
@@ -31,9 +40,10 @@ def gradient_check(f, x):
             print("Your gradient: %f \t Numerical gradient: %f" % (grad[ix], numeric_gradient))
             return
     
-        it.iternext() # Step to next index
+        it.iternext()  # Step to next index
 
     print("Gradient check passed!")
+
 
 def sanity_check():
     """
@@ -44,8 +54,9 @@ def sanity_check():
     print("Running sanity checks...")
     gradient_check(quad, np.array(123.456))      # scalar test
     gradient_check(quad, np.random.randn(3,))    # 1-D test
-    gradient_check(quad, np.random.randn(4,5))   # 2-D test
+    gradient_check(quad, np.random.randn(4, 5))   # 2-D test
     print("")
+
 
 if __name__ == '__main__':
     # If these fail, your code is definitely wrong.
