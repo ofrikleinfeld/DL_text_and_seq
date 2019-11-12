@@ -1,17 +1,50 @@
 import numpy as np
 
-STUDENT={'name': 'YOUR NAME',
-         'ID': 'YOUR ID NUMBER'}
+from loglinear import softmax, cross_entropy_loss
+
+STUDENT = {'name': 'Ofri Kleinfeld',
+         'ID': '302893680'}
+
+
+def tanh(x):
+    return np.tanh(x)
+
+
+def tanh_derivative(x):
+    return 1 - tanh(x) ** 2
+
+
+def mat_vec_mul(vec, mat):
+    return np.einsum("i,ij->j", vec, mat)
+
+
+def mat_vec_mul_reverse(vec, mat):
+    return np.einsum("j,ij->i", vec, mat)
+
+
+def vec_and_vec_to_mat_mul(matrix_columns, matrix_rows):
+    return np.einsum("j,i->ij", matrix_columns, matrix_rows)
+
 
 def classifier_output(x, params):
     # YOUR CODE HERE.
-    return probs
+    W, b, U, b_tag = params
+
+    z = mat_vec_mul(x, W) + b
+    h = tanh(z)
+    o = mat_vec_mul(h, U) + b_tag
+    probs = softmax(o)
+
+    return probs, [z, h, o]
+
 
 def predict(x, params):
     """
     params: a list of the form [W, b, U, b_tag]
     """
-    return np.argmax(classifier_output(x, params))
+    probs, _ = classifier_output(x, params)
+    return np.argmax(probs)
+
 
 def loss_and_gradients(x, y, params):
     """
