@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # define training hyper parameters
     in_dim = len(F2I)
     out_dim = len(L2I)
-    hidden_dim = 50
+    hidden_dim = 15
     num_iterations = 50
     learning_rate = 1e-2
 
