@@ -95,8 +95,6 @@ if __name__ == '__main__':
 
     # initiate classifier parameters
     W, b = ll.create_classifier(in_dim, out_dim)
-    W = np.random.randn(W.shape[0], W.shape[1])
-    b = np.random.randn(b.shape[0])
 
     # train
     trained_params = train_classifier(train_data, dev_data, num_iterations, learning_rate, [W, b])
