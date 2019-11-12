@@ -57,10 +57,17 @@ def train_classifier(train_data, dev_data, num_iterations, learning_rate, params
             # update the parameters according to the gradients
             # and the learning rate.
 
+            W, b = params
+            gW, gb = grads
+
+            W -= learning_rate * gW
+            b -= learning_rate * gb
+
         train_loss = cum_loss / len(train_data)
         train_accuracy = accuracy_on_dataset(train_data, params)
         dev_accuracy = accuracy_on_dataset(dev_data, params)
         print(i, train_loss, train_accuracy, dev_accuracy)
+
     return params
 
 
