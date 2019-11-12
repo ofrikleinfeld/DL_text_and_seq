@@ -71,6 +71,7 @@ def tanh_derivative_check():
 
 
 def mlp_check():
+    print("MLP (one hidden layer) gradient checks")
     from mlp1 import create_classifier, loss_and_gradients as mlp1_loss_and_grad
     from train_mlp1 import randomly_initialize_params
     in_dim, hid_dim, out_dim = 5, 3, 2
@@ -113,6 +114,7 @@ def mlpn_loglinear_check():
     x = np.random.randn(dims[0], )
     y = 0
 
+    print("MLP arbitrary layers gradient check (special case of log linear model")
     for i in range(5):
         def _loss_and_W_grad(W_):
             current_linear = params[0]
@@ -125,17 +127,27 @@ def mlpn_loglinear_check():
             loss, grads = mlpn.loss_and_gradients(x, y, new_params)
             return loss, grads[0]
 
+        def _loss_and_b_grad(b_):
+            current_linear = params[0]
+            new_linear = mlpn.Linear(current_linear.in_dim, current_linear.out_dim)
+
+            new_linear.w = current_linear.w
+            new_linear.b = b_
+            new_params = [new_linear] + params[1:]
+
+            loss, grads = mlpn.loss_and_gradients(x, y, new_params)
+            return loss, grads[1]
+
         print(f"Gradients checks for random initialization {i+1}")
         W = params[0].w
         gradient_check(_loss_and_W_grad, W)
-        # gradient_check(_loss_and_b_grad, b)
-        # gradient_check(_loss_and_U_grad, U)
-        # gradient_check(_loss_and_b_tag_grad, b_tag)
+        b = params[0].b
+        gradient_check(_loss_and_b_grad, b)
 
 
 if __name__ == '__main__':
     # If these fail, your code is definitely wrong.
-    # sanity_check()
-    # tanh_derivative_check()
-    # mlp_check()
+    sanity_check()
+    tanh_derivative_check()
+    mlp_check()
     mlpn_loglinear_check()
