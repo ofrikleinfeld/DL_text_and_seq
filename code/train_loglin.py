@@ -2,7 +2,7 @@ import random
 import numpy as np
 
 import loglinear as ll
-from utils import F2I, L2I, TRAIN, DEV
+from utils import F2I, L2I, TRAIN, DEV, TEST
 
 
 STUDENT = {'name': "Ofri Kleinfeld",
@@ -99,4 +99,14 @@ if __name__ == '__main__':
 
     # train
     trained_params = train_classifier(train_data, dev_data, num_iterations, learning_rate, params)
+
+    # predict on test data and write to file
+    test_data = [feats_to_vec(bigrams) for _, bigrams in TEST]
+    I2L = {index: label for label, index in L2I.items()}
+    with open("test.pred", "w") as f:
+        for sample_features in test_data:
+            label_index = ll.predict(sample_features, trained_params)
+            label = I2L[label_index]
+            f.write(f"{label}\n")
+
 
