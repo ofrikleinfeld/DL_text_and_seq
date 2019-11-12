@@ -69,8 +69,8 @@ def loss_and_gradients(x, y, params):
     y_one_hot[y] = 1
 
     loss = cross_entropy_loss(probs, y)
-    gh = y_one_hot - probs
-    gW = np.einsum("j,i->ji", gh, x)
+    gh = probs - y_one_hot
+    gW = np.einsum("j,i->ij", gh, x)
     gb = gh
 
     return loss, [gW, gb]
