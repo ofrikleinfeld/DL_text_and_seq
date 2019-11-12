@@ -67,15 +67,15 @@ if __name__ == '__main__':
     # Sanity checks for softmax. If these fail, your softmax is definitely wrong.
     # If these pass, it may or may not be correct.
     test1 = softmax(np.array([1,2]))
-    print test1
+    print(test1)
     assert np.amax(np.fabs(test1 - np.array([0.26894142,  0.73105858]))) <= 1e-6
 
     test2 = softmax(np.array([1001,1002]))
-    print test2
+    print(test2)
     assert np.amax(np.fabs(test2 - np.array( [0.26894142, 0.73105858]))) <= 1e-6
 
     test3 = softmax(np.array([-1001,-1002])) 
-    print test3 
+    print(test3) 
     assert np.amax(np.fabs(test3 - np.array([0.73105858, 0.26894142]))) <= 1e-6
 
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         loss,grads = loss_and_gradients([1,2,3],0,[W,b])
         return loss,grads[1]
 
-    for _ in xrange(10):
+    for _ in range(10):
         W = np.random.randn(W.shape[0],W.shape[1])
         b = np.random.randn(b.shape[0])
         gradient_check(_loss_and_b_grad, b)
