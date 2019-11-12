@@ -90,7 +90,7 @@ if __name__ == '__main__':
     # define training hyper parameters
     in_dim = len(F2I)
     out_dim = len(L2I)
-    num_iterations = 10
+    num_iterations = 100
     learning_rate = 1e-3
 
     # initiate classifier parameters
