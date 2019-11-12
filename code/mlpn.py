@@ -36,19 +36,21 @@ class AbstractNetworkModuleWithParams(NetworkModule):
 class Linear(AbstractNetworkModuleWithParams):
     def __init__(self, in_dimension, out_dimension):
         super().__init__()
-        self.init_weights(in_dimension, out_dimension)
+        self.in_dim = in_dimension
+        self.out_dim = out_dimension
+        self.init_weights(self.in_dim, self.out_dim)
 
     def init_weights(self, in_dimension, out_dimension):
         self.xavier_initialization(in_dimension, out_dimension)
 
     def __call__(self, x):
         self.layer_input = x
-        self.layer_output = np.einsum("i,ij->j", x, self.w) + self.b
+        self.layer_output = np.einsum("i,ji->j", x, self.w) + self.b
         return self.layer_output
 
     def backward(self, next_layer_grad):
-        self.layer_grad = np.einsum("j,ij->i", next_layer_grad, self.w)
-        self.w_grad = np.einsum("j,i->ij", next_layer_grad, self.layer_input)
+        self.layer_grad = np.einsum("j,ji->i", next_layer_grad, self.w)
+        self.w_grad = np.einsum("j,i->ji", next_layer_grad, self.layer_input)
         self.b_grad = next_layer_grad
         return self.layer_grad
 
@@ -92,12 +94,9 @@ class CELoss(NetworkModule):
 
     def __call__(self, logits, label):
         self.layer_input = logits
+        self.label = label
         self.layer_output = self.softmax_func(self.layer_input)
 
-        y_one_hot = np.zeros(self.layer_input.shape)
-        y_one_hot[label] = 1
-
-        self.label = y_one_hot
         self.loss = self.cross_entropy_loss(self.layer_output, self.label)
 
         return self.loss
@@ -148,10 +147,10 @@ def loss_and_gradients(x, y, params):
     loss = ce_loss(logits, y_one_hot)
 
     # backprop
-    pred_gard = ce_loss.backward()
+    pred_grad = ce_loss.backward()
     for layer in params:
-        layer.backward(pred_gard)
-        pred_gard = layer.layer_grad
+        layer.backward(pred_grad)
+        pred_grad = layer.layer_grad
 
     # extract gradients w.r.t to parameters
     grads = []
