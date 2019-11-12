@@ -1,5 +1,9 @@
-import loglinear as ll
 import random
+import numpy as np
+
+import loglinear as ll
+from utils import F2I, L2I, TRAIN, DEV
+
 
 STUDENT = {'name': "Ofri Kleinfeld",
          'ID': '302893680'}
@@ -18,7 +22,10 @@ def accuracy_on_dataset(dataset, params):
         # Compute the accuracy (a scalar) of the current parameters
         # on the dataset.
         # accuracy is (correct_predictions / all_predictions)
-        pass
+
+        pred_label = ll.predict(features, params)
+        good += 1 if pred_label == label else bad +1
+
     return good / (good + bad)
 
 
