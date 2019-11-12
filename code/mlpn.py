@@ -148,7 +148,7 @@ def loss_and_gradients(x, y, params):
 
     # backprop
     pred_grad = ce_loss.backward()
-    for layer in params:
+    for layer in params[::-1]:  # visit params in reverse order:
         layer.backward(pred_grad)
         pred_grad = layer.layer_grad
 
