@@ -7,9 +7,11 @@ from collections import Counter
 def read_data(fname):
     data = []
 
-    for line in open(fname, "r", encoding="utf8"):
-        label, text = line.strip().lower().split("\t", 1)
-        data.append((label, text))
+    with open(fname, "r", encoding="utf8") as f:
+        for line in f:
+            label, text = line.strip().lower().split("\t", 1)
+            data.append((label, text))
+            
     return data
 
 
