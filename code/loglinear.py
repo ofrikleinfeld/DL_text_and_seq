@@ -1,7 +1,8 @@
 import numpy as np
 
-STUDENT={'name': 'YOUR NAME',
-         'ID': 'YOUR ID NUMBER'}
+STUDENT = {'name': 'Ofri Kleinfeld',
+         'ID': '302983680'}
+
 
 def softmax(x):
     """
@@ -15,7 +16,11 @@ def softmax(x):
     # With a vectorized implementation, the code should be no more than 2 lines.
     #
     # For numeric stability, use the identify you proved in Ex 2 Q1.
-    return x
+
+    z = x - np.max(x)
+    exp_z = np.exp(z)
+
+    return exp_z / sum(exp_z)
     
 
 def classifier_output(x, params):
