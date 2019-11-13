@@ -85,6 +85,7 @@ def loss_and_gradients(x, y, params):
     reversed_layer_grad = layers_grad[::-1]
     linear_layer_grads = reversed_layer_grad[1::2]
     linear_hidden_outputs = [hidden_outputs[0]] + hidden_outputs[1::2]
+    linear_hidden_outputs = [hidden_outputs[0]] + hidden_outputs[2::2]
     for i in range(len(linear_hidden_outputs)):
         current_grad = linear_layer_grads[i]
         current_output = linear_hidden_outputs[i]
