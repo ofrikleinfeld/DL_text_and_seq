@@ -132,9 +132,57 @@ def mlpn_loglinear_check():
         gradient_check(_loss_and_b_grad, b)
 
 
+def mlpn_2_hidden_check():
+    import mlpn
+    import train_mlp1
+    dims = [50, 20, 10, 3]
+    params = mlpn.create_classifier(dims)
+
+    x = np.random.randn(dims[0], )
+    y = 0
+
+    print("MLP arbitrary layers gradient check (special case of log linear model")
+    for i in range(1):
+        random_params = train_mlp1.randomly_initialize_params(params)
+        W1, b1, W2, b2, W3, b3 = random_params
+
+        def _loss_and_W1_grad(W1_):
+            loss, grads = mlpn.loss_and_gradients(x, y, [W1_, b1, W2, b2, W3, b3])
+            return loss, grads[0]
+
+        def _loss_and_b1_grad(b1_):
+            loss, grads = mlpn.loss_and_gradients(x, y, [W1, b1_, W2, b2, W3, b3])
+            return loss, grads[1]
+
+        def _loss_and_W2_grad(W2_):
+            loss, grads = mlpn.loss_and_gradients(x, y, [W1, b1, W2_, b2, W3, b3])
+            return loss, grads[2]
+
+        def _loss_and_b2_grad(b2_):
+            loss, grads = mlpn.loss_and_gradients(x, y, [W1, b1, W2, b2_, W3, b3])
+            return loss, grads[3]
+
+        def _loss_and_W3_grad(W3_):
+            loss, grads = mlpn.loss_and_gradients(x, y, [W1, b1, W2, b2, W3_, b3])
+            return loss, grads[4]
+
+        def _loss_and_b3_grad(b3_):
+            loss, grads = mlpn.loss_and_gradients(x, y, [W1, b1, W2, b2, W3, b3_])
+            return loss, grads[5]
+
+        print(f"Gradients checks for random initialization {i + 1}")
+        gradient_check(_loss_and_W1_grad, W1)
+        gradient_check(_loss_and_b1_grad, b1)
+        # gradient_check(_loss_and_W2_grad, W2)
+        # gradient_check(_loss_and_b2_grad, b2)
+        # gradient_check(_loss_and_W3_grad, W3)
+        # gradient_check(_loss_and_b3_grad, b3)
+
+
 if __name__ == '__main__':
     # If these fail, your code is definitely wrong.
     # sanity_check()
     # tanh_derivative_check()
     # mlp_check()
-    mlpn_loglinear_check()
+    # mlpn_loglinear_check()
+    mlpn_2_hidden_check()
