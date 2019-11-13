@@ -55,23 +55,38 @@ def loss_and_gradients(x, y, params):
     """
     # YOU CODE HERE
 
-    probs, hidden_layers = classifier_output(x, params)
+    probs, hidden_outputs = classifier_output(x, params)
     y_one_hot = np.zeros(probs.shape)
     y_one_hot[y] = 1
     loss = loglinear.cross_entropy_loss(probs, y)
 
     # backprop part
     # gradients with respect to layers inputs
+    logits_grad = probs - y_one_hot
+    layers_grad = [logits_grad]
 
-    layer_gradients = []
-    last_hidden_grad = probs - y_one_hot
-    layer_gradients.append(last_hidden_grad)
-    
-    g_h = mat_vec_mul_reverse(g_o, U)
-    g_z = g_h * tanh_derivative(z)
+    for i in range(len(params), 0, -2):
+        current_W = params[i-1]
+        last_layer_grad = layers_grad[-1]
+        h_layer_grad = mlp1.mat_vec_mul_reverse(last_layer_grad, current_W)
+        z_layer_grad = h_layer_grad * mlp1.tanh_derivative(hidden_outputs[i-1])
 
+        layers_grad.append(h_layer_grad)
+        layers_grad.append(z_layer_grad)
 
-    return ...
+    # gradients with respect to parameters
+    param_grads = []
+    reversed_layer_grad = layers_grad[::-1]
+    for i in range(len(layers_grad)):
+        current_grad = reversed_layer_grad[i]
+        current_output = hidden_outputs[i]
+        gw_i = mlp1.vec_and_vec_to_mat_mul(current_grad, current_output)
+        gb_i = current_grad
+
+        param_grads.append(gw_i)
+        param_grads.append(gb_i)
+
+    return loss, param_grads
 
 
 def create_classifier(dims):
