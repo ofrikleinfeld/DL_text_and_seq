@@ -63,28 +63,27 @@ def loss_and_gradients(x, y, params):
     # backprop part
     # gradients with respect to layers inputs
     logits_grad = probs - y_one_hot
-    layers_grad = [logits_grad]
+    reversed_layers_grad = [logits_grad]
 
     # special case last layer no activation
-    last_layer_grad = layers_grad[-1]
+    last_layer_grad = reversed_layers_grad[-1]
     last_W, _ = params[-2:]
     last_hidden_grad = mlp1.mat_vec_mul_reverse(last_layer_grad, last_W)
-    layers_grad.append(last_hidden_grad)
+    reversed_layers_grad.append(last_hidden_grad)
 
     for i in range(len(params[:-2]), 0, -2):
         current_W = params[i-2]
-        last_layer_grad = layers_grad[-1]
+        last_layer_grad = reversed_layers_grad[-1]
         z_layer_grad = last_layer_grad * mlp1.tanh_derivative(hidden_outputs[i-1])
         h_layer_grad = mlp1.mat_vec_mul_reverse(z_layer_grad, current_W)
 
-        layers_grad.append(z_layer_grad)
-        layers_grad.append(h_layer_grad)
+        reversed_layers_grad.append(z_layer_grad)
+        reversed_layers_grad.append(h_layer_grad)
 
     # gradients with respect to parameters
     param_grads = []
-    reversed_layer_grad = layers_grad[::-1]
-    linear_layer_grads = reversed_layer_grad[1::2]
-    linear_hidden_outputs = [hidden_outputs[0]] + hidden_outputs[1::2]
+    layer_grad = reversed_layers_grad[::-1]
+    linear_layer_grads = layer_grad[1::2]
     linear_hidden_outputs = [hidden_outputs[0]] + hidden_outputs[2::2]
     for i in range(len(linear_hidden_outputs)):
         current_grad = linear_layer_grads[i]
