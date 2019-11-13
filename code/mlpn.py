@@ -1,123 +1,39 @@
 import numpy as np
 
+from train_mlp1 import randomly_initialize_params
+import mlp1
+import loglinear
+
 STUDENT = {'name': 'Ofri Kleinfeld',
          'ID': '302893680'}
-
-
-class NetworkModule(object):
-    def __init__(self):
-        self.layer_input = None
-        self.layer_output = None
-        self.layer_grad = None
-
-    def __call__(self, *args):
-        raise NotImplementedError("Sub class must implement forward pass")
-
-    def backward(self, *args):
-        raise NotImplementedError("Sub class must implement backward pass")
-
-
-class AbstractNetworkModuleWithParams(NetworkModule):
-    def __init__(self):
-        super().__init__()
-        self.w = None
-        self.b = None
-        self.w_grad = None
-        self.b_grad = None
-
-    def init_weights(self, *args):
-        raise NotImplementedError("Sub class must implement an initialization method for weights")
-
-    def xavier_initialization(self, in_dimension, out_dimension):
-        self.w = np.random.normal(loc=0, scale=in_dimension, size=(out_dimension, in_dimension))
-        self.b = np.random.normal(loc=0, scale=in_dimension, size=out_dimension)
-
-
-class Linear(AbstractNetworkModuleWithParams):
-    def __init__(self, in_dimension, out_dimension):
-        super().__init__()
-        self.in_dim = in_dimension
-        self.out_dim = out_dimension
-        self.init_weights(self.in_dim, self.out_dim)
-
-    def init_weights(self, in_dimension, out_dimension):
-        self.xavier_initialization(in_dimension, out_dimension)
-
-    def __call__(self, x):
-        self.layer_input = x
-        self.layer_output = np.einsum("i,ji->j", x, self.w) + self.b
-        return self.layer_output
-
-    def backward(self, next_layer_grad):
-        self.layer_grad = np.einsum("j,ji->i", next_layer_grad, self.w)
-        self.w_grad = np.einsum("j,i->ji", next_layer_grad, self.layer_input)
-        self.b_grad = next_layer_grad
-        return self.layer_grad
-
-
-class Tanh(NetworkModule):
-    @staticmethod
-    def tanh_func(x):
-        return np.tanh(x)
-
-    @staticmethod
-    def tanh_derivative(x):
-        return 1 - np.tanh(x) ** 2
-
-    def __call__(self, z):
-        self.layer_input = z
-        self.layer_output = self.tanh_func(self.layer_input)
-        return self.layer_output
-
-    def backward(self, next_layer_gard):
-        self.layer_grad = next_layer_gard * self.tanh_derivative(self.layer_input)
-        return self.layer_grad
-
-
-class CELoss(NetworkModule):
-    @staticmethod
-    def softmax_func(x):
-        z = x - np.max(x)
-        exp_z = np.exp(z)
-
-        return exp_z / sum(exp_z)
-
-    @staticmethod
-    def cross_entropy_loss(probs, y):
-        loss = np.sum(-np.log(probs) * y)
-        return loss
-
-    def __init__(self):
-        super().__init__()
-        self.label = None
-        self.loss = None
-
-    def __call__(self, logits, label):
-        self.layer_input = logits
-        self.label = label
-        self.layer_output = self.softmax_func(self.layer_input)
-
-        self.loss = self.cross_entropy_loss(self.layer_output, self.label)
-
-        return self.loss
-
-    def backward(self):
-        self.layer_grad = self.layer_output - self.label
-        return self.layer_grad
 
 
 def classifier_output(x, params):
     # YOUR CODE HERE.
 
-    for layer in params:
-        x = layer(x)
+    current_input = x
+    hidden_outputs = [current_input]
 
-    logits = x
-    return logits
+    pred_W, pred_b = params[-2:]
+    hidden_params = params[:-2]
+    for i in range(0, len(hidden_params), 2):
+        W = hidden_params[i]
+        b = hidden_params[i+1]
+        z = mlp1.mat_vec_mul(current_input, W) + b
+        h = mlp1.tanh(z)
+
+        current_input = h
+        hidden_outputs.append(z)
+        hidden_outputs.append(h)
+
+    logits = mlp1.mat_vec_mul(current_input, pred_W) + pred_b
+    probs = loglinear.softmax(logits)
+    return probs, hidden_outputs
 
 
 def predict(x, params):
-    return np.argmax(classifier_output(x, params))
+    probs, _ = classifier_output(x, params)
+    return np.argmax(probs)
 
 
 def loss_and_gradients(x, y, params):
@@ -139,27 +55,46 @@ def loss_and_gradients(x, y, params):
     """
     # YOU CODE HERE
 
-    logits = classifier_output(x, params)
-    y_one_hot = np.zeros(logits.shape)
+    probs, hidden_outputs = classifier_output(x, params)
+    y_one_hot = np.zeros(probs.shape)
     y_one_hot[y] = 1
+    loss = loglinear.cross_entropy_loss(probs, y)
 
-    ce_loss = CELoss()
-    loss = ce_loss(logits, y_one_hot)
+    # backprop part
+    # gradients with respect to layers inputs
+    logits_grad = probs - y_one_hot
+    reversed_layers_grad = [logits_grad]
 
-    # backprop
-    pred_grad = ce_loss.backward()
-    for layer in params[::-1]:  # visit params in reverse order:
-        layer.backward(pred_grad)
-        pred_grad = layer.layer_grad
+    # special case last layer no activation
+    last_layer_grad = reversed_layers_grad[-1]
+    last_W, _ = params[-2:]
+    last_hidden_grad = mlp1.mat_vec_mul_reverse(last_layer_grad, last_W)
+    reversed_layers_grad.append(last_hidden_grad)
 
-    # extract gradients w.r.t to parameters
-    grads = []
-    for layer in params:
-        if isinstance(layer, AbstractNetworkModuleWithParams):
-            grads.append(layer.w_grad)
-            grads.append(layer.b_grad)
+    for i in range(len(params[:-2]), 0, -2):
+        current_W = params[i-2]
+        last_layer_grad = reversed_layers_grad[-1]
+        z_layer_grad = last_layer_grad * mlp1.tanh_derivative(hidden_outputs[i-1])
+        h_layer_grad = mlp1.mat_vec_mul_reverse(z_layer_grad, current_W)
 
-    return loss, grads
+        reversed_layers_grad.append(z_layer_grad)
+        reversed_layers_grad.append(h_layer_grad)
+
+    # gradients with respect to parameters
+    param_grads = []
+    layer_grad = reversed_layers_grad[::-1]
+    linear_layer_grads = layer_grad[1::2]
+    linear_hidden_outputs = [hidden_outputs[0]] + hidden_outputs[2::2]
+    for i in range(len(linear_hidden_outputs)):
+        current_grad = linear_layer_grads[i]
+        current_output = linear_hidden_outputs[i]
+        gw_i = mlp1.vec_and_vec_to_mat_mul(current_grad, current_output)
+        gb_i = current_grad
+
+        param_grads.append(gw_i)
+        param_grads.append(gb_i)
+
+    return loss, param_grads
 
 
 def create_classifier(dims):
@@ -183,18 +118,11 @@ def create_classifier(dims):
     second layer, and so on.
     """
     params = []
+    params_shapes = [(in_dim, out_dim) for in_dim, out_dim in zip(dims[:-1], dims[1:])]
+    for in_dim, out_dim in params_shapes:
+        params.append(np.zeros((in_dim, out_dim)))
+        params.append(np.zeros(out_dim))
 
-    layers_dims = [(in_dim, out_dim) for in_dim, out_dim in zip(dims[:-1], dims[1:])]
-    for i in range(len(layers_dims) - 1):
-        in_dim, out_dim = layers_dims[i]
-        current_layer = Linear(in_dim, out_dim)
-        current_activation = Tanh()
-        params.append(current_layer)
-        params.append(current_activation)
-
-    hid_dim, pred_dim = layers_dims[-1]
-    pred_layer = Linear(hid_dim, pred_dim)
-    params.append(pred_layer)
-
+    params = randomly_initialize_params(params)
     return params
 
