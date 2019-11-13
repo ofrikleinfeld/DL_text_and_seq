@@ -65,7 +65,13 @@ def loss_and_gradients(x, y, params):
     logits_grad = probs - y_one_hot
     layers_grad = [logits_grad]
 
-    for i in range(len(params), 0, -2):
+    # special case last layer no activation
+    last_layer_grad = layers_grad[-1]
+    last_W, _ = params[-2:]
+    last_hidden_grad = mlp1.mat_vec_mul_reverse(last_layer_grad, last_W)
+    layers_grad.append(last_hidden_grad)
+
+    for i in range(len(params[:-2]), 0, -2):
         current_W = params[i-1]
         last_layer_grad = layers_grad[-1]
         h_layer_grad = mlp1.mat_vec_mul_reverse(last_layer_grad, current_W)
@@ -77,9 +83,9 @@ def loss_and_gradients(x, y, params):
     # gradients with respect to parameters
     param_grads = []
     reversed_layer_grad = layers_grad[::-1]
-    for i in range(len(layers_grad)):
+    for i in range(1, len(layers_grad)):
         current_grad = reversed_layer_grad[i]
-        current_output = hidden_outputs[i]
+        current_output = hidden_outputs[i-1]
         gw_i = mlp1.vec_and_vec_to_mat_mul(current_grad, current_output)
         gb_i = current_grad
 
@@ -111,10 +117,10 @@ def create_classifier(dims):
     """
     params = []
 
-    params_shapes = [((in_dim, out_dim), out_dim) for in_dim, out_dim in zip(dims[:-1], dims[1:])]
-    for w_shape, b_shape in params_shapes:
-        params.append(np.zeros(*w_shape))
-        params.append(np.zeros(*b_shape))
+    params_shapes = [(in_dim, out_dim) for in_dim, out_dim in zip(dims[:-1], dims[1:])]
+    for in_dim, out_dim in params_shapes:
+        params.append(np.zeros((in_dim, out_dim)))
+        params.append(np.zeros(out_dim))
 
     params = randomly_initialize_params(params)
     return params
