@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # define training hyper parameters
     in_dim = len(F2I)
     out_dim = len(L2I)
-    dims = [in_dim, out_dim]
+    dims = [in_dim, 20, 10, out_dim]
 
     # initiate classifier parameters
     params = mlpn.create_classifier(dims)

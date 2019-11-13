@@ -142,7 +142,7 @@ def mlpn_2_hidden_check():
     y = 0
 
     print("MLP arbitrary layers gradient check (special case of log linear model")
-    for i in range(1):
+    for i in range(5):
         random_params = train_mlp1.randomly_initialize_params(params)
         W1, b1, W2, b2, W3, b3 = random_params
 
@@ -173,16 +173,16 @@ def mlpn_2_hidden_check():
         print(f"Gradients checks for random initialization {i + 1}")
         gradient_check(_loss_and_W1_grad, W1)
         gradient_check(_loss_and_b1_grad, b1)
-        # gradient_check(_loss_and_W2_grad, W2)
-        # gradient_check(_loss_and_b2_grad, b2)
-        # gradient_check(_loss_and_W3_grad, W3)
-        # gradient_check(_loss_and_b3_grad, b3)
+        gradient_check(_loss_and_W2_grad, W2)
+        gradient_check(_loss_and_b2_grad, b2)
+        gradient_check(_loss_and_W3_grad, W3)
+        gradient_check(_loss_and_b3_grad, b3)
 
 
 if __name__ == '__main__':
     # If these fail, your code is definitely wrong.
-    # sanity_check()
-    # tanh_derivative_check()
-    # mlp_check()
-    # mlpn_loglinear_check()
+    sanity_check()
+    tanh_derivative_check()
+    mlp_check()
+    mlpn_loglinear_check()
     mlpn_2_hidden_check()
