@@ -11,26 +11,24 @@ STUDENT = {'name': 'Ofri Kleinfeld',
 def classifier_output(x, params):
     # YOUR CODE HERE.
 
-    current_param = 0
     current_input = x
-    hidden_layers = []
-    while current_param < len(params):
-        W = params[current_param]
-        b = params[current_param + 1]
+    hidden_outputs = [current_input]
+
+    pred_W, pred_b = params[-2:]
+    hidden_params = params[:-2]
+    for i in range(0, len(hidden_params), 2):
+        W = hidden_params[i]
+        b = hidden_params[i+1]
         z = mlp1.mat_vec_mul(current_input, W) + b
+        h = mlp1.tanh(z)
 
-        hidden_layers.append(z)
-        current_input = z
-        # don't do non linearity in last hidden representation before softmax
-        if current_param + 2 < len(params):
-            h = mlp1.tanh(z)
-            hidden_layers.append(h)
-            current_input = h
+        current_input = h
+        hidden_outputs.append(z)
+        hidden_outputs.append(h)
 
-        current_param += 2
-
-    probs = loglinear.softmax(current_input)
-    return probs, hidden_layers
+    logits = mlp1.mat_vec_mul(current_input, pred_W) + pred_b
+    probs = loglinear.softmax(logits)
+    return probs, hidden_outputs
 
 
 def predict(x, params):
