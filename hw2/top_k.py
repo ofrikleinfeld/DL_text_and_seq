@@ -37,3 +37,19 @@ class WordSimilarities(object):
 
         return top_k_similarities
 
+
+if __name__ == '__main__':
+    vocab = "vocab.txt"
+    word_vectors = "wordVectors.txt"
+    wordSim = WordSimilarities(vocab, word_vectors)
+
+    # words to query
+    k_ = 5
+    query_words = ["dog", "england", "john", "explode", "office"]
+    word_distance_format = "{0}) {1}: {2:.3f}"
+    for word_ in query_words:
+        top_words = wordSim.get_to_k_similar_words(word_, k_)
+
+        print(f"Top 5 similar words for the word \"{word_}\" are:")
+        for i in range(k_):
+            print(word_distance_format.format(i+1, top_words[i][0], top_words[i][1]))
