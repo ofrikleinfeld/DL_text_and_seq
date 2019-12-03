@@ -16,15 +16,16 @@ class WordSimilarities(object):
         v_t = v.T
         return u_t @ v / (np.sqrt(u_t @ u) * np.sqrt(v_t @ v))
 
-    def _load_vocab_file(self, vocab_path:str) -> None:
+    def _load_vocab_file(self, vocab_path: str) -> None:
         with open(vocab_path, "r", encoding="utf8") as f:
             for index, word in enumerate(f):
+                word = word[:-1]  # remove end of line token
                 self.vocab[word] = index
 
     def _load_word_vectors(self, word_vectors_path: str) -> None:
         self.word_vectors = np.loadtxt(word_vectors_path)
 
-    def get_to_k_similar_words(self, query_word: str, k: int):
+    def get_to_k_similar_words(self, query_word: str, k: int) -> list:
         words_and_vectors = [(word, self.word_vectors[index]) for word, index in self.vocab.items() if word != query_word]
         query_word_vector = self.word_vectors[self.vocab[query_word]]
         words_and_similarities = [(word, self.vec_similarity(vector, query_word_vector)) for word, vector in words_and_vectors]
