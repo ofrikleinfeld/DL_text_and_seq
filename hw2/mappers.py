@@ -2,6 +2,8 @@ import re
 
 PADD = "PADD"
 UNK = "UNK"
+BEGIN = "<>"
+END = "</>"
 
 
 class TokenMapper(object):
@@ -129,11 +131,25 @@ class TokenMapperUnkCategory(TokenMapper):
         return bool(re.search('\d', word)) and ch in word
 
     def _init_mappings(self) -> None:
-        for index, category in enumerate(self.unk_categories.keys()):
-            self.token_to_idx[category] = index
-            self.idx_to_token[index] = category
+
+        # init mappings with BEGIN and END symbols
+        self.token_to_idx[BEGIN] = 0
+        self.idx_to_token[0] = BEGIN
+        self.token_to_idx[END] = 1
+        self.idx_to_token[1] = END
+
+        # continue with initiating unknown mappings
+        self._init_unknown_mappings()
+
+    def _init_unknown_mappings(self) -> None:
+        current_index = len(self.token_to_idx)
+        for category in self.unk_categories.keys():
+            self.token_to_idx[category] = current_index
+            self.idx_to_token[current_index] = category
+            current_index += 1
 
         # add UNK as final fallback
-        current_index = len(self.token_to_idx)
         self.token_to_idx[UNK] = current_index
         self.idx_to_token[current_index] = UNK
+        current_index += 1
+
