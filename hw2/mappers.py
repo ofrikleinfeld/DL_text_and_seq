@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 
 PADD = "PADD"
 UNK = "UNK"
@@ -62,18 +63,18 @@ class TokenMapper(object):
             self.token_to_idx[UNK] = 0
             self.idx_to_token[0] = UNK
 
-    def _remove_non_frequent(self, words_frequencies) -> set:
+    def _remove_non_frequent(self, words_frequencies) -> dict:
         # remove word below min_frequency
-        words = set()
+        words = OrderedDict()
         for word, frequency in words_frequencies.items():
             if frequency >= self.min_frequency:
-                words.add(word)
+                words[word] = 0
 
         return words
 
     def create_mapping(self, filepath: str) -> None:
-        words_frequencies = {}
-        labels = set()
+        words_frequencies = OrderedDict()
+        labels = OrderedDict()
 
         with open(filepath, "r", encoding="utf8") as f:
             for line in f:
@@ -83,7 +84,7 @@ class TokenMapper(object):
                     label = line_tokens[3]
 
                     words_frequencies[word] = words_frequencies.get(word, 0) + 1
-                    labels.add(label)
+                    labels[label] = 0
 
         # remove word below min_frequency
         words = self._remove_non_frequent(words_frequencies)
@@ -96,11 +97,11 @@ class TokenMapper(object):
         label_start_index = len(self.label_to_idx)
 
         # transform token to indices
-        for index, word in enumerate(words, word_start_index):
+        for index, word in enumerate(words.keys(), word_start_index):
             self.token_to_idx[word] = index
             self.idx_to_token[index] = word
 
-        for index, label in enumerate(labels, label_start_index):
+        for index, label in enumerate(labels.keys(), label_start_index):
             self.label_to_idx[label] = index
             self.idx_to_label[index] = label
 
