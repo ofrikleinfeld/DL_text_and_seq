@@ -113,3 +113,6 @@ venv.bak/
 train
 dev
 test
+
+# ignore text files for hw2
+hw2/*.txt
