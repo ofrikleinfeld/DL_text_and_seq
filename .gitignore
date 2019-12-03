@@ -108,3 +108,8 @@ venv.bak/
 
 # ignore pycharm files
 /.idea
+
+# ignore hw1 data files
+train
+dev
+test
