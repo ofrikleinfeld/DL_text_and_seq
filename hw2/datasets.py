@@ -46,10 +46,10 @@ class WindowDataset(data.Dataset):
         # start with index of real word
         for i in range(self.window_size, sentence_length + self.window_size):
             current_sample = sent[i - self.window_size:i + 1 + self.window_size]
-            current_label = labels[i]
-
             self.samples.append(current_sample)
-            self.labels.append(current_label)
+
+        for label in labels:
+            self.labels.append(label)
 
     def _get_word_index(self, word) -> int:
         # usual case - word appears in mapping dictionary (seen in train)
