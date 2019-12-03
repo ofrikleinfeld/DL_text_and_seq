@@ -85,3 +85,24 @@ class WindowDataset(data.Dataset):
         x = torch.tensor(sample_indices)
         y = torch.tensor(label_index)
         return x, y
+
+
+class WindowDatasetUnkCategories(WindowDataset):
+    def __init__(self, filepath: str, mapper: TokenMapperUnkCategory, window_size: int = 2):
+        super().__init__(filepath, mapper, window_size)
+        self.mapper = mapper
+
+    def _get_word_index(self, word) -> int:
+        # usual case - word appears in mapping dictionary (seen in train)
+        word_to_idx = self.mapper.token_to_idx
+        if word in word_to_idx:
+            return word_to_idx[word]
+
+        # if the word doesn't appear - try to find a "smart" unknown pattern
+        unknown_categories: dict = self.mapper.unk_categories
+        for category, cond_func in unknown_categories.items():
+            if cond_func(word):
+                return word_to_idx[category]
+
+        # cannot find a smart unknown pattern - return index of general unknown
+        return word_to_idx[UNK]
