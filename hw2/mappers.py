@@ -5,6 +5,7 @@ PADD = "PADD"
 UNK = "UNK"
 BEGIN = "<>"
 END = "</>"
+START_LINE = "-DOCSTART-"
 
 
 class TokenMapper(object):
@@ -12,9 +13,10 @@ class TokenMapper(object):
     Class for mapping discrete tokens in a training set
     to indices and back
     """
-    def __init__(self, min_frequency: int = 0, with_padding: bool = True):
+    def __init__(self, min_frequency: int = 0, with_padding: bool = True, split_char="\t"):
         self.with_padding = with_padding
         self.min_frequency = min_frequency
+        self.split_char = split_char
         self.token_to_idx = {}
         self.idx_to_token = {}
         self.label_to_idx = {}
@@ -78,10 +80,18 @@ class TokenMapper(object):
 
         with open(filepath, "r", encoding="utf8") as f:
             for line in f:
-                if line != "\n" and not line.startswith("#"):
-                    line_tokens = line.split("\t")
-                    word = line_tokens[1]
-                    label = line_tokens[3]
+
+                # skip start of document
+                if line.startswith(START_LINE):
+                    continue
+                # skip empty line (end of sentence_
+                if line == "\n":
+                    continue
+
+                else:
+                    line_tokens = line[:-1].split(self.split_char)  # remove end of line
+                    word = line_tokens[0]
+                    label = line_tokens[1]
 
                     words_frequencies[word] = words_frequencies.get(word, 0) + 1
                     labels[label] = 0
@@ -107,8 +117,8 @@ class TokenMapper(object):
 
 
 class TokenMapperUnkCategory(TokenMapper):
-    def __init__(self, min_frequency: int = 0):
-        super().__init__(min_frequency, with_padding=False)
+    def __init__(self, min_frequency: int = 0, split_char="\t"):
+        super().__init__(min_frequency, with_padding=False, split_char=split_char)
         self.unk_categories = {
             'twoDigitNum': lambda w: len(w) == 2 and w.isdigit() and w[0] != '0',
             'fourDigitNum': lambda w: len(w) == 4 and w.isdigit() and w[0] != '0',
@@ -124,7 +134,7 @@ class TokenMapperUnkCategory(TokenMapper):
             'lowerCase': lambda w: w.islower(),
             'punkMark': lambda w: w in (",", ".", ";", "?", "!", ":", ";", "-", '&'),
             'containsNonAlphaNumeric': lambda w: bool(re.search('\W', w)),
-            'percent': lambda w: len(w) > 1 and w[0] == '%' and w[1:].isdigit()
+            '%PerCent%': lambda w: len(w) > 1 and w[0] == '%' and w[1:].isdigit()
         }
 
     @staticmethod
