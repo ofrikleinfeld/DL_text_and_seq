@@ -56,7 +56,7 @@ class WindowTaggerConfig(ModelConfig):
     """
     def __init__(self, config_dict=None,
                  embedding_dim: int = 50, hidden_dim: int = 500,
-                 window_size = 2):
+                 window_size: int = 2):
         super().__init__(config_dict, embedding_dim)
         if config_dict is None:
             self.embedding_dim = embedding_dim
