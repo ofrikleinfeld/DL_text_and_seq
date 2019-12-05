@@ -1,6 +1,6 @@
 import torch
 import torch.utils.data as data
-from mappers import TokenMapper, TokenMapperUnkCategory, UNK, BEGIN, END, START_LINE
+from mappers import BaseMapper, UNK, BEGIN, END, START_LINE
 
 
 class WindowDataset(data.Dataset):
@@ -8,7 +8,7 @@ class WindowDataset(data.Dataset):
     Pytorch's Dataset derived class to create data sample from
     a path to a file
     """
-    def __init__(self, filepath: str, mapper: TokenMapper, window_size: int = 2):
+    def __init__(self, filepath: str, mapper: BaseMapper, window_size: int = 2):
         super().__init__()
         self.filepath = filepath
         self.mapper = mapper
@@ -57,19 +57,6 @@ class WindowDataset(data.Dataset):
         for label in labels:
             self.labels.append(label)
 
-    def _get_word_index(self, word) -> int:
-        # usual case - word appears in mapping dictionary (seen in train)
-        word_to_idx = self.mapper.token_to_idx
-        if word in word_to_idx:
-            return word_to_idx[word]
-
-        # if word doesn't appear - assign the index of unknown
-        return word_to_idx[UNK]
-
-    def _get_label_index(self, label) -> int:
-        label_to_idx = self.mapper.label_to_idx
-        return label_to_idx[label]
-
     def __len__(self) -> int:
         # perform lazy evaluation of data loading
         if len(self.samples) == 0:
@@ -84,36 +71,15 @@ class WindowDataset(data.Dataset):
 
         # retrieve sample and transform from tokens to indices
         sample = self.samples[item_idx]
-        sample_indices = [self._get_word_index(word) for word in sample]
+        sample_indices = [self.mapper.get_token_idx(word) for word in sample]
         x = torch.tensor(sample_indices)
 
         # verify if it a train/dev dataset of a test dataset
         if len(self.labels) > 0:  # we have labels
             label = self.labels[item_idx]
-            label_index = self._get_label_index(label)
+            label_index = self.mapper.get_label_idx(label)
             y = torch.tensor(label_index)
         else:
             y = None
 
         return x, y
-
-
-class WindowDatasetUnkCategories(WindowDataset):
-    def __init__(self, filepath: str, mapper: TokenMapperUnkCategory, window_size: int = 2):
-        super().__init__(filepath, mapper, window_size)
-        self.mapper = mapper
-
-    def _get_word_index(self, word) -> int:
-        # usual case - word appears in mapping dictionary (seen in train)
-        word_to_idx = self.mapper.token_to_idx
-        if word in word_to_idx:
-            return word_to_idx[word]
-
-        # if the word doesn't appear - try to find a "smart" unknown pattern
-        unknown_categories: dict = self.mapper.unk_categories
-        for category, cond_func in unknown_categories.items():
-            if cond_func(word):
-                return word_to_idx[category]
-
-        # cannot find a smart unknown pattern - return index of general unknown
-        return word_to_idx[UNK]
