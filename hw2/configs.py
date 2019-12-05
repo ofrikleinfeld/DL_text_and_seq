@@ -70,8 +70,8 @@ class TrainingConfig(BaseConfig):
     """
     def __init__(self, config_dict=None, batch_size: int = 16, num_workers: int = 12,
                  device: str = "cpu", num_epochs: int = 30, learning_rate: float = 1e-4,
-                 checkpoints_path: str = "checkpoints", checkpoint_step: int = 10
-                 ,print_step: int = 50):
+                 checkpoints_path: str = "checkpoints", checkpoint_step: int = 10,
+                 print_step: int = 50):
         super().__init__(config_dict)
 
         if config_dict is None:

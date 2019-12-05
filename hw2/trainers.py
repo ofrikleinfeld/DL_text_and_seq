@@ -111,6 +111,21 @@ class ModelTrainer(object):
                         epoch_num, batch_idx * batch_size, len(train_dataset),
                         100. * batch_idx / len(training_loader), loss.item()))
 
+            # end of epoch - compute loss on dev set
+            epoch_dev_loss = 0
+            model.eval()
+            with torch.no_grad():
+
+                for batch_idx, sample in enumerate(dev_loader):
+                    x, y = sample
+                    x, y = x.to(device), y.to(device)
+                    output = model(x)
+                    loss = self.loss_function(output, y)
+                    epoch_dev_loss += loss.item() * len(x)  # sum of losses, so multiply with batch size
+
+            average_epoch_dev_loss = epoch_dev_loss / len(dev_dataset)
+            print("Epoch {} Loss on Dev set is : {:.6f}".format(epoch_num, average_epoch_dev_loss))
+
             # compute average loss for epoch on dev set
             # if with_dev:
             #     with torch.no_grad():
