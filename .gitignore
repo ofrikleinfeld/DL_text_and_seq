@@ -116,3 +116,6 @@ test
 
 # ignore text files for hw2
 hw2/*.txt
+
+# ignore save checkpoints
+checkpoints/
