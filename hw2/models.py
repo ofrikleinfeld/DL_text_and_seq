@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from configs import ModelConfig, WindowTaggerConfig
 from mappers import TokenMapper
 
@@ -46,7 +45,7 @@ class WindowTagger(BaseModel):
     def forward(self, x: torch.tensor) -> torch.tensor:
         window_embeddings = self.embedding(x)  # results in tensor of size (batch, window_size * 2 + 1, embedding_dim)
         embedding = torch.flatten(window_embeddings, start_dim=1)  # concatenate the embeddings of the window words and current word
-        hidden = F.tanh(self.hidden(embedding))
+        hidden = torch.tanh(self.hidden(embedding))
         y_hat = self.output(hidden)
 
         return y_hat
