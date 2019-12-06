@@ -1,5 +1,4 @@
 import torch
-from torch.utils import data
 from mappers import BaseMapper
 
 
@@ -24,6 +23,9 @@ class BasePredictor(object):
         sample_tokens = torch.tensor(sample_tokens)
         return self.infer_sample(model, sample_tokens)
 
+    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> (int, int):
+        return NotImplementedError("A class deriving from BasePredictor must implement infer_model_outputs_with_gold_labels method")
+
 
 class WindowModelPredictor(BasePredictor):
 
@@ -40,3 +42,48 @@ class WindowModelPredictor(BasePredictor):
             predictions.append(predicted_label)
 
         return predictions
+
+    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> (int, int):
+        num_correct = 0
+        num_predictions = 0
+        gold_labels = []
+        for label_idx in labels:
+            gold_labels.append(self.mapper.get_label_idx(label_idx))
+
+        predictions = self.infer_model_outputs(model_outputs)
+        for i in range(len(predictions)):
+            current_prediction = predictions[i]
+            current_label = gold_labels[i]
+            num_predictions += 1
+
+            if current_prediction == current_label:
+                num_correct += 1
+
+        return num_correct, num_predictions
+
+
+class WindowNERTaggerPredictor(WindowModelPredictor):
+
+    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> (int, int):
+        # special case of unbalanced labels
+        # don't compute accuracy over trivial cases of the 'O' tag
+        num_correct = 0
+        num_predictions = 0
+        gold_labels = []
+        for label_idx in labels:
+            gold_labels.append(self.mapper.get_label_idx(label_idx))
+
+        predictions = self.infer_model_outputs(model_outputs)
+        for i in range(len(predictions)):
+            current_prediction = predictions[i]
+            current_label = gold_labels[i]
+
+            # don't count cases where predicated label and gold label are 'O'
+            if not (current_label == 'O' and current_prediction == 'O'):
+
+                if current_prediction == current_label:
+                    num_correct += 1
+
+                num_predictions += 1
+
+        return num_correct, num_predictions
