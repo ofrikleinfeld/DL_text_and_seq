@@ -49,7 +49,7 @@ class ModelTrainer(object):
         # Start training
         model = model.to(device)
         start_epoch = self.current_epoch
-        best_dev_accuracy = 1000
+        best_dev_accuracy = -1000
         for epoch in range(start_epoch, num_epochs):
 
             model.train(mode=True)
@@ -111,6 +111,7 @@ class ModelTrainer(object):
             print("Epoch {} Accuracy on Dev set is:\t{:.6f}".format(epoch_num, epoch_dev_accuracy))
 
             # save checkpoint of the model if needed
-            if epoch_dev_accuracy < best_dev_accuracy:
+            if epoch_dev_accuracy > best_dev_accuracy:
                 best_dev_accuracy = epoch_dev_accuracy
+                print("Epoch {} Saving best model so far with accuracy of {:.6f} on Dev set".format(epoch_num, best_dev_accuracy))
                 self.save_checkpoint(model_name)
