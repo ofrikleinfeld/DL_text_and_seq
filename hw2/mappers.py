@@ -140,23 +140,52 @@ class TokenMapper(BaseMapper):
 class TokenMapperUnkCategory(TokenMapper):
     def __init__(self, min_frequency: int = 0, split_char="\t"):
         super().__init__(min_frequency, split_char=split_char)
-        self.unk_categories = {
-            'twoDigitNum': self.__is_two_digit_num,
-            'fourDigitNum': self.__is_four_digit_num,
-            'containsDigitAndAlpha': self.__contains_digit_and_alpha,
-            'containsDigitAndDash': self.__contains_digit_and_dash,
-            'containsDigitAndSlash': self.__contains_digit_and_slash,
-            'containsDigitAndComma': self.__contains_digit_and_comma,
-            'containsDigitAndPeriod': self.__contains_digit_and_period,
-            'otherNum': self.__is_other_num,
-            'allCaps': self.__is_all_caps,
-            'capPeriod': self.__is_caps_period,
-            'initCap': self.__is_init_cap,
-            'lowerCase': self.__is_lower_case,
-            'punkMark': self.__is_punk_mark,
-            'containsNonAlphaNumeric': self.__contains_non_alpha_numeric,
-            '%PerCent%': self.__is_percent
-        }
+        self.unk_categories = ["twoDigitNum", "fourDigitNum", "containsDigitAndAlpha",
+                               "containsDigitAndDash", "containsDigitAndSlash", "containsDigitAndComma",
+                               "containsDigitAndPeriod", "otherNum", "allCaps", "capPeriod",
+                               "initCap", "lowerCase", "punkMark", "containsNonAlphaNumeric", "%PerCent%"]
+
+    def get_token_idx(self, raw_token: str) -> int:
+        # usual case - word appears in mapping dictionary (seen in train)
+        if raw_token in self.token_to_idx:
+            return self.token_to_idx[raw_token]
+
+        # if the word doesn't appear - try to find a "smart" unknown pattern
+        if self.__is_two_digit_num(raw_token):
+            category = "twoDigitNum"
+        elif self.__is_four_digit_num(raw_token):
+            category = "fourDigitNum"
+        elif self.__contains_digit_and_alpha(raw_token):
+            category = "containsDigitAndAlpha"
+        elif self.__contains_digit_and_dash(raw_token):
+            category = "containsDigitAndDash"
+        elif self.__contains_digit_and_slash(raw_token):
+            category = "containsDigitAndSlash"
+        elif self.__contains_digit_and_comma(raw_token):
+            category = "containsDigitAndComma"
+        elif self.__contains_digit_and_period(raw_token):
+            category = "containsDigitAndPeriod"
+        elif self.__is_other_num(raw_token):
+            category = "otherNum"
+        elif self.__is_all_caps(raw_token):
+            category = "allCaps"
+        elif self.__is_caps_period(raw_token):
+            category = "capPeriod"
+        elif self.__is_init_cap(raw_token):
+            category = "initCap"
+        elif self.__is_lower_case(raw_token):
+            category = "lowerCase"
+        elif self.__is_punk_mark(raw_token):
+            category = "punkMark"
+        elif self.__is_non_alpha_numeric(raw_token):
+            category = "containsNonAlphaNumeric"
+        elif self.__is_percent(raw_token):
+            category = "%PerCent%"
+        else:
+            # cannot find a smart unknown pattern - return index of general unknown
+            category = UNK
+
+        return self.token_to_idx[category]
 
     def __contains_digit_and_char(self, word: str, ch: str) -> bool:
         return bool(re.search('\d', word)) and ch in word
@@ -200,7 +229,7 @@ class TokenMapperUnkCategory(TokenMapper):
     def __is_punk_mark(self, word: str) -> bool:
         return word in (",", ".", ";", "?", "!", ":", ";", "-", '&')
 
-    def __contains_non_alpha_numeric(self, word: str) -> bool:
+    def __is_non_alpha_numeric(self, word: str) -> bool:
         return bool(re.search('\W', word))
 
     def __is_percent(self, word: str) -> bool:
@@ -218,7 +247,7 @@ class TokenMapperUnkCategory(TokenMapper):
 
     def _init_unknown_mappings(self) -> None:
         current_index = len(self.token_to_idx)
-        for category in self.unk_categories.keys():
+        for category in self.unk_categories:
             self.token_to_idx[category] = current_index
             self.idx_to_token[current_index] = category
             current_index += 1
@@ -227,17 +256,3 @@ class TokenMapperUnkCategory(TokenMapper):
         self.token_to_idx[UNK] = current_index
         self.idx_to_token[current_index] = UNK
         current_index += 1
-
-    def get_token_idx(self, raw_token: str) -> int:
-        # usual case - word appears in mapping dictionary (seen in train)
-        if raw_token in self.token_to_idx:
-            return self.token_to_idx[raw_token]
-
-        # if the word doesn't appear - try to find a "smart" unknown pattern
-        unknown_categories: dict = self.unk_categories
-        for category, cond_func in unknown_categories.items():
-            if cond_func(raw_token):
-                return self.token_to_idx[category]
-
-        # cannot find a smart unknown pattern - return index of general unknown
-        return self.token_to_idx[UNK]
