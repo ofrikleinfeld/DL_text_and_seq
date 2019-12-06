@@ -80,6 +80,6 @@ class WindowDataset(data.Dataset):
             label_index = self.mapper.get_label_idx(label)
             y = torch.tensor(label_index)
         else:
-            y = None
+            y = torch.tensor([])
 
         return x, y
