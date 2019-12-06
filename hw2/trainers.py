@@ -93,6 +93,9 @@ class ModelTrainer(object):
         for epoch in range(start_epoch, num_epochs):
 
             model.train(mode=True)
+            running_batch_loss = 0
+            running_batch_samples = 0
+            epoch_train_loss = 0
             epoch_num = epoch + 1
 
             for batch_idx, sample in enumerate(training_loader):
@@ -101,17 +104,22 @@ class ModelTrainer(object):
                 x, y = x.to(device), y.to(device)
 
                 optimizer.zero_grad()
-                output = model(x)
-                loss = self.loss_function(output, y)
+                outputs = model(x)
+                loss = self.loss_function(outputs, y)
 
                 loss.backward()
                 optimizer.step()
 
                 # print inter epoch statistics
+                epoch_train_loss += loss.item() * len(outputs)
+                running_batch_loss += loss.item() * len(outputs)
+                running_batch_samples += len(outputs)
                 if batch_idx % print_batch_step == 0:
-                    print("Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                    print("Train Epoch: {} [{}/{} ({:.0f}%)]\t Average Loss: {:.6f}".format(
                         epoch_num, batch_idx * batch_size, len(train_dataset),
-                        100. * batch_idx / len(training_loader), loss.item()))
+                                   100. * batch_idx / len(training_loader), running_batch_loss / running_batch_samples))
+                    running_batch_loss = 0
+                    running_batch_samples = 0
 
             # end of epoch - compute loss on dev set
             epoch_dev_loss = 0
@@ -134,10 +142,13 @@ class ModelTrainer(object):
                     num_correct_predictions += num_correct_batch
                     total_predictions += total_predictions_batch
 
+            average_epoch_train_loss = epoch_train_loss / len(train_dataset)
             average_epoch_dev_loss = epoch_dev_loss / len(dev_dataset)
             epoch_dev_accuracy = num_correct_predictions / total_predictions
-            print("Epoch {} Loss on Dev set is : {:.6f}".format(epoch_num, average_epoch_dev_loss))
-            print("Epoch {} Accuracy on Dev set is : {:.6f}".format(epoch_num, epoch_dev_accuracy))
+
+            print("Epoch {} Loss on Train set is:\t{:.6f}".format(epoch_num, average_epoch_train_loss))
+            print("Epoch {} Loss on Dev set is:\t{:.6f}".format(epoch_num, average_epoch_dev_loss))
+            print("Epoch {} Accuracy on Dev set is:\t{:.6f}".format(epoch_num, epoch_dev_accuracy))
 
             # compute average loss for epoch on dev set
             # if with_dev:
