@@ -36,4 +36,4 @@ if __name__ == '__main__':
     ce_loss = nn.CrossEntropyLoss()
     window_predictor = WindowModelPredictor(mapper)
     trainer = ModelTrainer(window_tagger, training_config, window_predictor, ce_loss)
-    trainer.train(train_dataset=train_data, dev_dataset=dev_data)
+    trainer.train("NER", train_dataset=train_data, dev_dataset=dev_data)
