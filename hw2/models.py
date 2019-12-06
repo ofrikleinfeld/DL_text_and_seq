@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from configs import ModelConfig, WindowTaggerConfig
-from mappers import BaseMapper
+from mappers import BaseMapper, TokenMapperWithSubWords
 
 
 class BaseModel(nn.Module):
@@ -98,13 +98,12 @@ class WindowModelWithPreTrainedEmbeddings(ModelWithPreTrainedEmbeddings):
         super().__init__(config, mapper)
         self.load_pre_trained_embeddings(pre_trained_vocab_path, pre_trained_embedding_path)
 
-        # define hyper parameters and layer
+        # define hyper parameters and layers
         window_size = config.window_size
         tokens_dim = mapper.get_tokens_dim()
         labels_dim = mapper.get_labels_dim()
         hidden_dim = config.hidden_dim
 
-        # layers
         input_dim = (2 * window_size + 1) * self.embedding_dim
         self.embedding = nn.Embedding(tokens_dim, self.embedding_dim)
         self.hidden = nn.Linear(in_features=input_dim, out_features=hidden_dim)
@@ -113,6 +112,40 @@ class WindowModelWithPreTrainedEmbeddings(ModelWithPreTrainedEmbeddings):
     def forward(self, x: torch.tensor) -> torch.tensor:
         window_embeddings = self.embedding(x)  # results in tensor of size (batch, window_size * 2 + 1, embedding_dim)
         embedding = torch.flatten(window_embeddings, start_dim=1)  # concatenate the embeddings of the window words and current word
+        hidden = torch.tanh(self.hidden(embedding))
+        y_hat = self.output(hidden)
+
+        return y_hat
+
+
+class WindowModelWithSubWords(ModelWithPreTrainedEmbeddings):
+    def __init__(self, config: WindowTaggerConfig, mapper: TokenMapperWithSubWords, pre_trained: bool = False,
+                 pre_trained_vocab_path: str = "", pre_trained_embedding_path: str = ""):
+        super().__init__(config, mapper)
+        if pre_trained:
+            self.load_pre_trained_embeddings(pre_trained_vocab_path, pre_trained_embedding_path)
+
+        # define hyper parameters and layers
+        window_size = config.window_size
+        hidden_dim = config.hidden_dim
+        labels_dim = mapper.get_labels_dim()
+        prefix_dim = mapper.get_prefix_dim()
+        suffix_dim = mapper.get_suffix_dim()
+        input_dim = (2 * window_size + 1) * self.embedding_dim
+
+        self.prefix_embedding = nn.Embedding(prefix_dim, self.embedding_dim)
+        self.suffix_embedding = nn.Embedding(suffix_dim, self.embedding_dim)
+        self.hidden = nn.Linear(in_features=input_dim, out_features=hidden_dim)
+        self.output = nn.Linear(in_features=hidden_dim, out_features=labels_dim)
+
+    def forward(self, x: list) -> torch.tensor:
+        words_tokens, prefix_tokens, suffix_tokens = x
+        word_embeddings = self.embedding(words_tokens)
+        prefix_embeddings = self.prefix_embedding(prefix_tokens)
+        suffix_embeddings = self.suffix_embedding(suffix_tokens)
+
+        embeddings_sum = word_embeddings + prefix_embeddings + suffix_embeddings
+        embedding = torch.flatten(embeddings_sum, start_dim=1)  # concatenate the embeddings of the window words and current word
         hidden = torch.tanh(self.hidden(embedding))
         y_hat = self.output(hidden)
 
