@@ -1,27 +1,27 @@
 import torch.nn as nn
-from configs import TrainingConfig, WindowTaggerConfig
-from mappers import TokenMapperUnkCategory
+from factory_classes import ConfigsFactory, MappersFactory, ModelsFactory, PredictorsFactory
 from datasets import WindowDataset
-from models import WindowTagger
 from trainers import ModelTrainer
-from predictors import WindowModelPredictor
 
-if __name__ == '__main__':
 
-    # paths to datasets
-    train_path = "ner/train"
-    dev_path = "ner/dev"
+def train(training_unique_name: str, train_path: str, dev_path: str,
+          model_config_name: str, model_config_path: str,
+          training_config_name: str, training_config_path: str,
+          model_name: str, mapper_name: str, predictor_name: str):
 
-    # paths to json config files
-    model_config_path = "window_tagger_config.json"
-    training_config_path = "training_config.json"
+    # initiate factory object
+    config_factory = ConfigsFactory()
+    mappers_factory = MappersFactory()
+    models_factory = ModelsFactory()
+    predictors_factory = PredictorsFactory()
 
     # create config object
-    model_config = WindowTaggerConfig().from_json_file(model_config_path)
-    training_config = TrainingConfig().from_json_file(training_config_path)
+    model_config = config_factory(model_config_name).from_json_file(model_config_path)
+    training_config = config_factory(training_config_name).from_json_file(training_config_path)
 
     # read training file and create a mapping from token to indices
-    mapper = TokenMapperUnkCategory(min_frequency=5)
+    min_frequency = 5
+    mapper = mappers_factory(mapper_name, min_frequency)
     mapper.create_mapping(train_path)
 
     # create dataset for training and dev
@@ -29,11 +29,11 @@ if __name__ == '__main__':
     dev_data = WindowDataset(dev_path, mapper)
 
     # create a model
-    window_tagger = WindowTagger(model_config, mapper)
+    model = models_factory(model_name, model_config, mapper)
 
     # create a trainer object, predictor, and a loss function
     # then start training
     ce_loss = nn.CrossEntropyLoss()
-    window_predictor = WindowModelPredictor(mapper)
-    trainer = ModelTrainer(window_tagger, training_config, window_predictor, ce_loss)
-    trainer.train("NER", train_dataset=train_data, dev_dataset=dev_data)
+    predictor = predictors_factory(predictor_name, mapper)
+    trainer = ModelTrainer(model, training_config, predictor, ce_loss)
+    trainer.train(training_unique_name, train_dataset=train_data, dev_dataset=dev_data)

@@ -1,14 +1,10 @@
-from pathlib import Path
-
 import torch
 from torch.utils import data
-
-from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory
+from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory
 from models import BaseModel
 from mappers import BaseMapper
 from datasets import WindowDataset
-from configs import BaseConfig, InferenceConfig
-from predictors import BasePredictor, WindowModelPredictor
+from configs import BaseConfig
 
 
 def load_trained_model(path_to_pth_file: str):
@@ -46,23 +42,20 @@ def load_trained_model(path_to_pth_file: str):
     return trained_model
 
 
-if __name__ == '__main__':
-
-    # paths to test dataset config file and saved checkpoints
-    test_path = "ner/test"
-    inference_config_path = "inference_config.json"
-    checkpoints_dir = Path("checkpoints")
+def inference(test_path: str, inference_config_name: str, inference_config_path: str, saved_model_path: str,
+              predictor_name: str) -> list:
+    # initiate factory object
+    config_factory = ConfigsFactory()
+    predictors_factory = PredictorsFactory()
 
     # load trained model class and initiate a predictor
-    checkpoint = checkpoints_dir / "NER" / "06-12-19_best_model.pth"
-    model: BaseModel = load_trained_model(checkpoint)
+    model: BaseModel = load_trained_model(saved_model_path)
     mapper = model.mapper
-    predictor = WindowModelPredictor(mapper)
+    predictor = predictors_factory(predictor_name, mapper)
 
     # create dataset object and preform inference
     test_dataset = WindowDataset(test_path, mapper)
-
-    inference_config = InferenceConfig().from_json_file(inference_config_path)
+    inference_config = config_factory(inference_config_name).from_json_file(inference_config_path)
     test_config_dict = {"batch_size": inference_config.batch_size, "num_workers": inference_config.num_workers}
     test_loader = data.DataLoader(test_dataset, **test_config_dict)
 
@@ -82,4 +75,5 @@ if __name__ == '__main__':
             for prediction in batch_predictions:
                 predicted_label = mapper.get_label_from_idx(prediction)
                 predictions.append(predicted_label)
-                print(predicted_label)
+
+    return predictions
