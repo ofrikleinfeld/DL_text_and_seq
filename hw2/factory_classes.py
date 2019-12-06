@@ -1,4 +1,4 @@
-from models import BaseModel, WindowTagger
+from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings
 from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory
 from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor
 from configs import BaseConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig
@@ -36,6 +36,10 @@ class ModelsFactory(object):
 
         if class_name == "WindowTagger":
             return WindowTagger(*constructor_attributes)
+        elif class_name == "WindowModelWithPreTrainedEmbeddings":
+            pre_trained_attributes = ("vocab.txt", "wordVectors.txt")
+            constructor_attributes += pre_trained_attributes
+            return WindowModelWithPreTrainedEmbeddings(*constructor_attributes)
 
         raise AttributeError("Unknown model name")
 

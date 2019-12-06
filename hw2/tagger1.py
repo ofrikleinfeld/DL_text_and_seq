@@ -28,6 +28,8 @@ if __name__ == '__main__':
                                  help="which model to use during training")
     training_parser.add_argument("--model_type", type=str, required=True, choices=["pos", "ner"],
                                  help="which model to use during training (effects accuracy computation)")
+    training_parser.add_argument("--pre_trained_embeddings", action="store_true", required=False,
+                                 help="Whether to use pre trained word embeddings or not")
 
     inference_parser = subparsers.add_parser('inference')
     inference_parser.add_argument("--test_path", type=str, required=True,
@@ -49,8 +51,12 @@ if __name__ == '__main__':
         training_config_path = args.training_config_path
         train_config_name = "TrainingConfig"
         model_config_name = "WindowTaggerConfig"
-        model_name = args.model_name
         model_type = args.model_type
+
+        if args.pre_trained_embeddings:
+            model_name = "WindowModelWithPreTrainedEmbeddings"
+        else:
+            model_name = args.model_name
 
         if args.unknown_token == "unknown":
             mapper_name = "TokenMapper",
