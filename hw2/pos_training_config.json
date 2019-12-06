@@ -3,7 +3,7 @@
 	,"num_workers": 12
 	,"device": "cuda"
 	,"num_epochs": 10
-	,"print_step": 50
+	,"print_step": 700
     ,"learning_rate": 4e-3
 	,"checkpoints_path": "checkpoints"
 	,"checkpoint_step": 30
