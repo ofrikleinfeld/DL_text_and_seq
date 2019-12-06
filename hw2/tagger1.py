@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
         if args.model_type == "pos":
             predictor_name = "WindowModelPredictor"
-        elif args.predictor_name == "ner":
+        elif args.model_type == "ner":
             predictor_name = "WindowNERTaggerPredictor"
         else:
             raise AttributeError("Wrong predictor name")
