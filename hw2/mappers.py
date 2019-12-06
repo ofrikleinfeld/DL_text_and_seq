@@ -254,3 +254,86 @@ class TokenMapperUnkCategory(TokenMapper):
         self.token_to_idx[UNK] = current_index
         self.idx_to_token[current_index] = UNK
         current_index += 1
+
+
+class TokenMapperWithSubWords(TokenMapperUnkCategory):
+
+    def __init__(self, min_frequency: int = 0, split_char="\t"):
+        super().__init__(min_frequency, split_char)
+        self.UNK_PREFIX = "UnKnownPrefix"
+        self.UNK_SUFFIX = "UnknownSuffix"
+        self.prefix_to_index = {}
+        self.index_to_prefix = {}
+        self.suffix_to_index = {}
+        self.index_to_suffix = {}
+
+    def get_prefix_index(self, prefix: str) -> int:
+        if prefix in self.prefix_to_index:
+            return self.prefix_to_index[prefix]
+        else:
+            return self.prefix_to_index[self.UNK_PREFIX]
+
+    def get_suffix_index(self, suffix: str) -> int:
+        if suffix in self.suffix_to_index:
+            return self.suffix_to_index[suffix]
+        else:
+            return self.suffix_to_index[self.UNK_SUFFIX]
+
+    def get_prefix_from_index(self, index: int) -> str:
+        return self.index_to_prefix[index]
+
+    def get_suffix_from_index(self, index: int) -> str:
+        return self.index_to_suffix[index]
+
+    def get_prefix_dim(self) -> int:
+        return len(self.prefix_to_index)
+
+    def get_suffix_dim(self) -> int:
+        return len(self.suffix_to_index)
+
+    def _init_mappings(self) -> None:
+        super()._init_mappings()
+        self.prefix_to_index[self.UNK_PREFIX] = 0
+        self.index_to_prefix[0] = self.UNK_PREFIX
+        self.suffix_to_index[self.UNK_SUFFIX] = 0
+        self.index_to_suffix[0] = self.UNK_SUFFIX
+
+    def create_mapping(self, filepath: str) -> None:
+        super().create_mapping(filepath)
+
+        prefixes_frequencies = OrderedDict()
+        suffixes_frequencies = OrderedDict()
+
+        with open(filepath, "r", encoding="utf8") as f:
+            for line in f:
+
+                # skip start of document
+                if line.startswith(START_LINE):
+                    continue
+                # skip empty line (end of sentence_
+                if line == "\n":
+                    continue
+
+                else:
+                    line_tokens = line[:-1].split(self.split_char)  # remove end of line
+                    word = line_tokens[0]
+                    prefix = word[:3]
+                    suffix = word[-3:]
+
+                    prefixes_frequencies[prefix] = prefixes_frequencies.get(prefix, 0) + 1
+                    suffixes_frequencies[suffix] = suffixes_frequencies.get(suffix, 0) + 1
+
+        # remove sub units below min_frequency
+        prefixes = self._remove_non_frequent(prefixes_frequencies)
+        suffixes = self._remove_non_frequent(suffixes_frequencies)
+        prefix_start_index = len(self.prefix_to_index)
+        suffix_start_index = len(self.suffix_to_index)
+
+        # transform token to indices
+        for index, prefix in enumerate(prefixes.keys(), prefix_start_index):
+            self.prefix_to_index[prefix] = index
+            self.index_to_prefix[index] = prefix
+
+        for index, suffix in enumerate(suffixes.keys(), suffix_start_index):
+            self.suffix_to_index[suffix] = index
+            self.index_to_suffix[index] = suffix
