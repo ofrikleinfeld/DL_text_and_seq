@@ -1,10 +1,9 @@
 import re
 from collections import OrderedDict
 
-PADD = "PADD"
 UNK = "UNK"
-BEGIN = "<>"
-END = "</>"
+BEGIN = "<s>"
+END = "</s>"
 START_LINE = "-DOCSTART-"
 
 
