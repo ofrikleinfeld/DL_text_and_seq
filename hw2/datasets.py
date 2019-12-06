@@ -1,6 +1,6 @@
 import torch
 import torch.utils.data as data
-from mappers import BaseMapper, UNK, BEGIN, END, START_LINE
+from mappers import BaseMapper, BEGIN, END, START_LINE
 
 
 class WindowDataset(data.Dataset):

@@ -74,7 +74,7 @@ class ModelTrainer(object):
         num_epochs = self.train_config.num_epochs
         learning_rate = self.train_config.learning_rate
         print_batch_step = self.train_config.print_step
-        checkpoint_step = self.train_config.checkpoints_step
+        checkpoint_step = self.train_config.checkpoint_step
         device = torch.device(self.train_config.device)
 
         # model, loss and optimizer

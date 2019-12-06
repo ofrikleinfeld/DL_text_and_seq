@@ -81,5 +81,5 @@ class TrainingConfig(BaseConfig):
             self.num_epochs = num_epochs
             self.learning_rate = learning_rate
             self.checkpoints_path = checkpoints_path
-            self.checkpoints_step = checkpoint_step
+            self.checkpoint_step = checkpoint_step
             self.print_step = print_step
