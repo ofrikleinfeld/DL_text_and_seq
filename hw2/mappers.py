@@ -294,9 +294,18 @@ class TokenMapperWithSubWords(TokenMapperUnkCategory):
     def _init_mappings(self) -> None:
         super()._init_mappings()
         self.prefix_to_index[self.UNK_PREFIX] = 0
-        self.index_to_prefix[0] = self.UNK_PREFIX
+        self.prefix_to_index[BEGIN] = 1
+        self.prefix_to_index[END] = 2
         self.suffix_to_index[self.UNK_SUFFIX] = 0
+        self.suffix_to_index[BEGIN] = 1
+        self.suffix_to_index[END] = 2
+
+        self.index_to_prefix[0] = self.UNK_PREFIX
+        self.index_to_prefix[1] = BEGIN
+        self.index_to_prefix[2] = END
         self.index_to_suffix[0] = self.UNK_SUFFIX
+        self.index_to_suffix[1] = BEGIN
+        self.index_to_suffix[2] = END
 
     def create_mapping(self, filepath: str) -> None:
         super().create_mapping(filepath)
