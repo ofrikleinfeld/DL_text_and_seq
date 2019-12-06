@@ -119,3 +119,6 @@ hw2/*.txt
 
 # ignore save checkpoints
 checkpoints/
+
+# ingore logs
+hw2/logs/
