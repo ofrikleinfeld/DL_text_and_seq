@@ -37,9 +37,8 @@ class WindowModelPredictor(BasePredictor):
         _, labels_tokens = torch.max(model_outputs, dim=1)
 
         for i in range(len(model_outputs)):  # every sample in case of batch (even batch of size 1)
-            current_prediction = labels_tokens[i].cpu().numpy()
-            predicted_label = self.mapper.get_label_idx(current_prediction)
-            predictions.append(predicted_label)
+            current_prediction = labels_tokens[i].item()
+            predictions.append(current_prediction)
 
         return predictions
 
@@ -48,7 +47,7 @@ class WindowModelPredictor(BasePredictor):
         num_predictions = 0
         gold_labels = []
         for label_idx in labels:
-            gold_labels.append(self.mapper.get_label_idx(label_idx))
+            gold_labels.append(label_idx.item())
 
         predictions = self.infer_model_outputs(model_outputs)
         for i in range(len(predictions)):
@@ -71,7 +70,7 @@ class WindowNERTaggerPredictor(WindowModelPredictor):
         num_predictions = 0
         gold_labels = []
         for label_idx in labels:
-            gold_labels.append(self.mapper.get_label_idx(label_idx))
+            gold_labels.append(label_idx.item())
 
         predictions = self.infer_model_outputs(model_outputs)
         for i in range(len(predictions)):
@@ -79,7 +78,9 @@ class WindowNERTaggerPredictor(WindowModelPredictor):
             current_label = gold_labels[i]
 
             # don't count cases where predicated label and gold label are 'O'
-            if not (current_label == 'O' and current_prediction == 'O'):
+            # get the index of the label 'O'
+            outside_index = self.mapper.get_label_idx('O')
+            if not (current_label == outside_index and current_prediction == outside_index):
 
                 if current_prediction == current_label:
                     num_correct += 1
