@@ -4,7 +4,7 @@ from datasets import WindowDataset
 from trainers import ModelTrainer
 
 
-def train(training_unique_name: str, train_path: str, dev_path: str,
+def train(training_unique_name: str, model_type: str, train_path: str, dev_path: str,
           model_config_name: str, model_config_path: str,
           training_config_name: str, training_config_path: str,
           model_name: str, mapper_name: str, predictor_name: str):
@@ -21,7 +21,11 @@ def train(training_unique_name: str, train_path: str, dev_path: str,
 
     # read training file and create a mapping from token to indices
     min_frequency = 5
-    mapper = mappers_factory(mapper_name, min_frequency)
+    if model_type == "pos":
+        split_char = " "
+    else:
+        split_char = "\t"
+    mapper = mappers_factory(mapper_name, min_frequency, split_char)
     mapper.create_mapping(train_path)
 
     # create dataset for training and dev
