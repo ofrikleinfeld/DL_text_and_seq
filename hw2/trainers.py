@@ -4,12 +4,14 @@ import torch
 from torch.utils import data
 from models import BaseModel
 from configs import TrainingConfig
+from predictors import BasePredictor
 
 
 class ModelTrainer(object):
-    def __init__(self, model: BaseModel, train_config: TrainingConfig, loss_function):
+    def __init__(self, model: BaseModel, train_config: TrainingConfig, predictor: BasePredictor, loss_function):
         self.model = model
         self.train_config = train_config
+        self.predictor = predictor
         self.loss_function = loss_function
         self.current_epoch = 0
 
@@ -114,17 +116,28 @@ class ModelTrainer(object):
             # end of epoch - compute loss on dev set
             epoch_dev_loss = 0
             model.eval()
+            total_predictions = 0
+            num_correct_predictions = 0
             with torch.no_grad():
 
                 for batch_idx, sample in enumerate(dev_loader):
                     x, y = sample
                     x, y = x.to(device), y.to(device)
-                    output = model(x)
-                    loss = self.loss_function(output, y)
+                    outputs = model(x)
+
+                    # compute the loss of the batch
+                    loss = self.loss_function(outputs, y)
                     epoch_dev_loss += loss.item() * len(x)  # sum of losses, so multiply with batch size
 
+                    # compute number of correct predictions for the batch
+                    num_correct_batch, total_predictions_batch = self.predictor.infer_model_outputs_with_gold_labels(outputs, y)
+                    num_correct_predictions += num_correct_batch
+                    total_predictions += total_predictions_batch
+
             average_epoch_dev_loss = epoch_dev_loss / len(dev_dataset)
+            epoch_dev_accuracy = num_correct_predictions / total_predictions
             print("Epoch {} Loss on Dev set is : {:.6f}".format(epoch_num, average_epoch_dev_loss))
+            print("Epoch {} Accuracy on Dev set is : {:.6f}".format(epoch_num, epoch_dev_accuracy))
 
             # compute average loss for epoch on dev set
             # if with_dev:
