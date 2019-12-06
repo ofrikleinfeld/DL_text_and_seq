@@ -141,29 +141,72 @@ class TokenMapperUnkCategory(TokenMapper):
     def __init__(self, min_frequency: int = 0, split_char="\t"):
         super().__init__(min_frequency, split_char=split_char)
         self.unk_categories = {
-            'twoDigitNum': lambda w: len(w) == 2 and w.isdigit() and w[0] != '0',
-            'fourDigitNum': lambda w: len(w) == 4 and w.isdigit() and w[0] != '0',
-            'containsDigitAndAlpha': lambda w: bool(re.search('\d', w)) and bool(re.search('[a-zA-Z_]', w)),
-            'containsDigitAndDash': lambda w: self._contains_digit_and_char(w, '-'),
-            'containsDigitAndSlash': lambda w: self._contains_digit_and_char(w, '/'),
-            'containsDigitAndComma': lambda w: self._contains_digit_and_char(w, ','),
-            'containsDigitAndPeriod': lambda w: self._contains_digit_and_char(w, '.'),
-            'otherNum': lambda w: w.isdigit(),
-            'allCaps': lambda w: w.isupper(),
-            'capPeriod': lambda w: len(w) == 2 and w[1] == '.' and w[0].isupper(),
-            'initCap': lambda w: len(w) > 1 and w[0].isupper(),
-            'lowerCase': lambda w: w.islower(),
-            'punkMark': lambda w: w in (",", ".", ";", "?", "!", ":", ";", "-", '&'),
-            'containsNonAlphaNumeric': lambda w: bool(re.search('\W', w)),
-            '%PerCent%': lambda w: len(w) > 1 and w[0] == '%' and w[1:].isdigit()
+            'twoDigitNum': self.__is_two_digit_num,
+            'fourDigitNum': self.__is_four_digit_num,
+            'containsDigitAndAlpha': self.__contains_digit_and_alpha,
+            'containsDigitAndDash': self.__contains_digit_and_dash,
+            'containsDigitAndSlash': self.__contains_digit_and_slash,
+            'containsDigitAndComma': self.__contains_digit_and_comma,
+            'containsDigitAndPeriod': self.__contains_digit_and_period,
+            'otherNum': self.__is_other_num,
+            'allCaps': self.__is_all_caps,
+            'capPeriod': self.__is_caps_period,
+            'initCap': self.__is_init_cap,
+            'lowerCase': self.__is_lower_case,
+            'punkMark': self.__is_punk_mark,
+            'containsNonAlphaNumeric': self.__contains_non_alpha_numeric,
+            '%PerCent%': self.__is_percent
         }
 
-    @staticmethod
-    def _contains_digit_and_char(word, ch) -> bool:
+    def __contains_digit_and_char(self, word: str, ch: str) -> bool:
         return bool(re.search('\d', word)) and ch in word
 
-    def _init_mappings(self) -> None:
+    def __is_two_digit_num(self, word: str) -> bool:
+        return len(word) == 2 and word.isdigit() and word[0] != '0'
 
+    def __is_four_digit_num(self, word: str) -> bool:
+        return len(word) == 4 and word.isdigit() and word[0] != '0'
+
+    def __contains_digit_and_alpha(self, word: str) -> bool:
+        return bool(re.search('\d', word)) and bool(re.search('[a-zA-Z_]', word))
+
+    def __contains_digit_and_dash(self, word: str) -> bool:
+        return self.__contains_digit_and_char(word, '-')
+
+    def __contains_digit_and_slash(self, word: str) -> bool:
+        return self.__contains_digit_and_char(word, '/')
+
+    def __contains_digit_and_comma(self, word: str) -> bool:
+        return self.__contains_digit_and_char(word, ',')
+
+    def __contains_digit_and_period(self, word: str) -> bool:
+        return self.__contains_digit_and_char(word, '.')
+
+    def __is_other_num(self, word: str) -> bool:
+        return word.isdigit()
+
+    def __is_all_caps(self, word: str) -> bool:
+        return word.isupper()
+
+    def __is_caps_period(self, word: str) -> bool:
+        return len(word) == 2 and word[1] == '.' and word[0].isupper()
+
+    def __is_init_cap(self, word: str) -> bool:
+        return len(word) > 1 and word[0].isupper()
+
+    def __is_lower_case(self, word: str) -> bool:
+        return word.islower()
+
+    def __is_punk_mark(self, word: str) -> bool:
+        return word in (",", ".", ";", "?", "!", ":", ";", "-", '&')
+
+    def __contains_non_alpha_numeric(self, word: str) -> bool:
+        return bool(re.search('\W', word))
+
+    def __is_percent(self, word: str) -> bool:
+        return len(word) > 1 and word[0] == '%' and word[1:].isdigit()
+
+    def _init_mappings(self) -> None:
         # init mappings with BEGIN and END symbols
         self.token_to_idx[BEGIN] = 0
         self.idx_to_token[0] = BEGIN
