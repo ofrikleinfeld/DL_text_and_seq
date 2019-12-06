@@ -58,6 +58,12 @@ class BaseMapper(object):
     def get_label_idx(self, raw_label: str) -> int:
         raise NotImplementedError("A concrete mapper class needs to implement get_label_idx method ")
 
+    def get_token_from_idx(self, index: int) -> str:
+        return self.idx_to_token[index]
+
+    def get_label_from_idx(self, index: int) -> str:
+        return self.idx_to_label[index]
+
 
 class TokenMapper(BaseMapper):
     """
