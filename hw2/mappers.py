@@ -25,23 +25,20 @@ class BaseMapper(object):
     def serialize(self) -> dict:
         return {
             "min_frequency": self.min_frequency,
+            "split_char": self.split_char,
             "token_to_idx": self.token_to_idx,
             "label_to_idx": self.label_to_idx,
             "idx_to_token": self.idx_to_token,
             "idx_to_label": self.idx_to_label
         }
 
-    @classmethod
-    def deserialize(cls, serialized_mapper: dict):
-        mapper = cls()
-
-        mapper.min_frequency = serialized_mapper["min_frequency"]
-        mapper.token_to_idx = serialized_mapper["token_to_idx"]
-        mapper.label_to_idx = serialized_mapper["label_to_idx"]
-        mapper.idx_to_token = serialized_mapper["idx_to_token"]
-        mapper.idx_to_label = serialized_mapper["idx_to_label"]
-
-        return mapper
+    def deserialize(self, serialized_mapper: dict) -> None:
+        self.min_frequency = serialized_mapper["min_frequency"]
+        self.split_char = serialized_mapper["split_char"]
+        self.token_to_idx = serialized_mapper["token_to_idx"]
+        self.label_to_idx = serialized_mapper["label_to_idx"]
+        self.idx_to_token = serialized_mapper["idx_to_token"]
+        self.idx_to_label = serialized_mapper["idx_to_label"]
 
     def get_tokens_dim(self) -> int:
         return len(self.token_to_idx)
@@ -72,10 +69,6 @@ class TokenMapper(BaseMapper):
     """
     def __init__(self, min_frequency: int = 0, split_char="\t"):
         super().__init__(min_frequency, split_char)
-
-    @classmethod
-    def deserialize(cls, serialized_mapper: dict):
-        return BaseMapper.deserialize(serialized_mapper)
 
     def _init_mappings(self) -> None:
         self.token_to_idx[UNK] = 0

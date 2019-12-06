@@ -8,11 +8,11 @@ class BasePredictor(object):
         self.mapper = mapper
 
     def infer_model_outputs(self, model_outputs: torch.tensor):
-        return NotImplementedError("A class deriving from BasePredictor must implement infer_model_outputs method")
+        raise NotImplementedError("A class deriving from BasePredictor must implement infer_model_outputs method")
 
     def infer_sample(self, model: torch.nn.Module, tokens_indices: torch.tensor):
         model_outputs = model(tokens_indices)
-        return self.infer_model_outputs(model_outputs)
+        raise self.infer_model_outputs(model_outputs)
 
     def infer_raw_sample(self, model: torch.nn.Module, raw_sample: list):
         sample_tokens = []
@@ -24,7 +24,7 @@ class BasePredictor(object):
         return self.infer_sample(model, sample_tokens)
 
     def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> (int, int):
-        return NotImplementedError("A class deriving from BasePredictor must implement infer_model_outputs_with_gold_labels method")
+        raise NotImplementedError("A class deriving from BasePredictor must implement infer_model_outputs_with_gold_labels method")
 
 
 class WindowModelPredictor(BasePredictor):
