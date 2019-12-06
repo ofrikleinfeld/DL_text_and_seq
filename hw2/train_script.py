@@ -1,5 +1,5 @@
 import torch.nn as nn
-from factory_classes import ConfigsFactory, MappersFactory, ModelsFactory, PredictorsFactory
+from factory_classes import ConfigsFactory, MappersFactory, ModelsFactory, PredictorsFactory, DatasetsFactory
 from datasets import WindowDataset
 from trainers import ModelTrainer
 
@@ -7,13 +7,15 @@ from trainers import ModelTrainer
 def train(training_unique_name: str, model_type: str, train_path: str, dev_path: str,
           model_config_name: str, model_config_path: str,
           training_config_name: str, training_config_path: str,
-          model_name: str, mapper_name: str, predictor_name: str):
+          model_name: str, mapper_name: str, predictor_name: str,
+          dataset_name: str):
 
     # initiate factory object
     config_factory = ConfigsFactory()
     mappers_factory = MappersFactory()
     models_factory = ModelsFactory()
     predictors_factory = PredictorsFactory()
+    datasets_factory = DatasetsFactory()
 
     # create config object
     model_config = config_factory(model_config_name).from_json_file(model_config_path)
@@ -29,8 +31,8 @@ def train(training_unique_name: str, model_type: str, train_path: str, dev_path:
     mapper.create_mapping(train_path)
 
     # create dataset for training and dev
-    train_data = WindowDataset(train_path, mapper)
-    dev_data = WindowDataset(dev_path, mapper)
+    train_data = datasets_factory(dataset_name, train_path, mapper)
+    dev_data = datasets_factory(dataset_name, dev_path, mapper)
 
     # create a model
     model = models_factory(model_name, model_config, mapper)

@@ -1,7 +1,9 @@
+import torch.utils.data as data
 from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings
 from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory
 from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor
 from configs import BaseConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig
+from datasets import WindowDataset, WindowWithSubWordsDataset
 
 
 class ConfigsFactory(object):
@@ -54,3 +56,15 @@ class PredictorsFactory(object):
             return WindowNERTaggerPredictor(*constructor_attributes)
 
         raise AttributeError("Unknown predictor name")
+
+
+class DatasetsFactory(object):
+    def __call__(self, class_name: str, *constructor_attributes) -> data.Dataset:
+
+        if class_name == "WindowDataset":
+            return WindowDataset(*constructor_attributes)
+
+        if class_name == "WindowWithSubWordsDataset":
+            return WindowWithSubWordsDataset(*constructor_attributes)
+
+        raise AttributeError("Unknown dataset name")

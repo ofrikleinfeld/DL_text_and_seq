@@ -1,6 +1,6 @@
 import torch
 from torch.utils import data
-from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory
+from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
 from models import BaseModel
 from mappers import BaseMapper
 from datasets import WindowDataset
@@ -43,10 +43,11 @@ def load_trained_model(path_to_pth_file: str):
 
 
 def inference(test_path: str, inference_config_name: str, inference_config_path: str, saved_model_path: str,
-              predictor_name: str) -> list:
+              predictor_name: str, dataset_name: str) -> list:
     # initiate factory object
     config_factory = ConfigsFactory()
     predictors_factory = PredictorsFactory()
+    dataset_factory = DatasetsFactory()
 
     # load trained model class and initiate a predictor
     model: BaseModel = load_trained_model(saved_model_path)
@@ -54,7 +55,7 @@ def inference(test_path: str, inference_config_name: str, inference_config_path:
     predictor = predictors_factory(predictor_name, mapper)
 
     # create dataset object and preform inference
-    test_dataset = WindowDataset(test_path, mapper)
+    test_dataset = dataset_factory(dataset_name, test_path, mapper)
     inference_config = config_factory(inference_config_name).from_json_file(inference_config_path)
     test_config_dict = {"batch_size": inference_config.batch_size, "num_workers": inference_config.num_workers}
     test_loader = data.DataLoader(test_dataset, **test_config_dict)

@@ -30,6 +30,8 @@ if __name__ == '__main__':
                                  help="which model to use during training (effects accuracy computation)")
     training_parser.add_argument("--pre_trained_embeddings", action="store_true", required=False,
                                  help="Whether to use pre trained word embeddings or not")
+    training_parser.add_argument("--sub_word_units", action="store_true", required=False,
+                                 help="Whether to use sub word units embeddings or not")
 
     inference_parser = subparsers.add_parser('inference')
     inference_parser.add_argument("--test_path", type=str, required=True,
@@ -40,8 +42,23 @@ if __name__ == '__main__':
                                   help="path to a json file containing model hyper parameters for inference procedure")
     inference_parser.add_argument("--model_type", type=str, required=True, choices=["pos", "ner"], default="pos",
                                   help="which predictor to use during training (effects accuracy computation)")
+    inference_parser.add_argument("--sub_word_units", action="store_true", required=False,
+                                 help="Whether to use sub word units embeddings or not")
+
     args = parser.parse_args(sys.argv[1:])
     mode = sys.argv[1]
+
+    if args.sub_word_units:
+        dataset_name = "WindowWithSubWordsDataset"
+    else:
+        dataset_name = "WindowDataset"
+
+    if args.model_type == "pos":
+        predictor_name = "WindowModelPredictor"
+    elif args.model_type == "ner":
+        predictor_name = "WindowNERTaggerPredictor"
+    else:
+        predictor_name = ""
 
     if mode == "training":
         name = args.name
@@ -65,16 +82,9 @@ if __name__ == '__main__':
         else:
             raise AttributeError("Wrong mapper name")
 
-        if args.model_type == "pos":
-            predictor_name = "WindowModelPredictor"
-        elif args.model_type == "ner":
-            predictor_name = "WindowNERTaggerPredictor"
-        else:
-            raise AttributeError("Wrong predictor name")
-
         # train the model
         train(name, model_type, train_path, dev_path, model_config_name, model_config_path, train_config_name,
-              training_config_path, model_name, mapper_name, predictor_name)
+              training_config_path, model_name, mapper_name, predictor_name, dataset_name)
 
     else:  # mode is inference
         test_path = args.test_path
@@ -82,13 +92,7 @@ if __name__ == '__main__':
         inference_config_path = args.inference_config_path
         inference_config_name = "InferenceConfig"
 
-        if args.model_type == "pos":
-            predictor_name = "WindowModelPredictor"
-        elif args.predictor_name == "ner":
-            predictor_name = "WindowNERTaggerPredictor"
-        else:
-            raise AttributeError("Wrong predictor name")
-
-        predictions = inference(test_path, inference_config_name, inference_config_path, trained_model_path, predictor_name)
+        predictions = inference(test_path, inference_config_name, inference_config_path,
+                                trained_model_path, predictor_name, dataset_name)
         print(len(predictions))
         print(predictions[:100])
