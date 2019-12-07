@@ -157,7 +157,7 @@ class WindowWithSubWordsDataset(WindowDataset):
         sample_indices = torch.tensor(sample_indices)
         prefixes_indices = torch.tensor(prefixes_indices)
         suffixes_indices = torch.tensor(suffixes_indices)
-        x = (sample_indices, prefixes_indices, suffixes_indices)
+        x = torch.stack([sample_indices, prefixes_indices, suffixes_indices])
 
         # verify if it a train/dev dataset of a test dataset
         if len(self.labels) > 0:  # we have labels

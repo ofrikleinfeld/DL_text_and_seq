@@ -139,7 +139,9 @@ class WindowModelWithSubWords(ModelWithPreTrainedEmbeddings):
         self.output = nn.Linear(in_features=hidden_dim, out_features=labels_dim)
 
     def forward(self, x: list) -> torch.tensor:
-        words_tokens, prefix_tokens, suffix_tokens = x
+        words_tokens = x[:, 0, :]
+        prefix_tokens = x[:, 1, :]
+        suffix_tokens = x[:, 2, :]
         word_embeddings = self.embedding(words_tokens)
         prefix_embeddings = self.prefix_embedding(prefix_tokens)
         suffix_embeddings = self.suffix_embedding(suffix_tokens)
