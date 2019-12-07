@@ -8,7 +8,6 @@ if __name__ == '__main__':
     # training and inference setting and parameters
     parser = argparse.ArgumentParser(description='NER/POS models training and prediction application')
     subparsers = parser.add_subparsers()
-    # parser.add_argument("--mode", type=str, required=True, choices=["training", "inference"])
 
     # create the parser for the "training" command
     training_parser = subparsers.add_parser('training')
@@ -22,12 +21,10 @@ if __name__ == '__main__':
                                  help="path to a json file containing model hyper parameters")
     training_parser.add_argument("--training_config_path", type=str, required=False, default="training_config.json",
                                  help="path to a json file containing hyper parameters for training procedure")
-    training_parser.add_argument("--unknown_token", type=str, required=True, choices=["unknown", "smart_unknown"],
-                                 default="smart_unknown", help="a choice how to deal with tokens not seen on train data")
-    training_parser.add_argument("--model_name", type=str, required=False, default="WindowTagger",
-                                 help="which model to use during training")
     training_parser.add_argument("--model_type", type=str, required=True, choices=["pos", "ner"],
                                  help="which model to use during training (effects accuracy computation)")
+    training_parser.add_argument("--smart_unknown", action="store_true", required=False,
+                                 help="Group tokens not seen on train data to distinctive groups such as numbers, dates, captial letters etc.")
     training_parser.add_argument("--pre_trained_embeddings", action="store_true", required=False,
                                  help="Whether to use pre trained word embeddings or not")
     training_parser.add_argument("--sub_word_units", action="store_true", required=False,
@@ -43,22 +40,21 @@ if __name__ == '__main__':
     inference_parser.add_argument("--model_type", type=str, required=True, choices=["pos", "ner"], default="pos",
                                   help="which predictor to use during training (effects accuracy computation)")
     inference_parser.add_argument("--sub_word_units", action="store_true", required=False,
-                                 help="Whether to use sub word units embeddings or not")
+                                  help="Whether to use sub word units embeddings or not")
 
     args = parser.parse_args(sys.argv[1:])
     mode = sys.argv[1]
+    flags = {
+        "pre_train": args.pre_trained_embeddings,
+        "sub_word_units": args.sub_word_units,
+        "smart_unknown": args.smart_unknown
+    }
 
-    if args.sub_word_units:
-        dataset_name = "WindowWithSubWordsDataset"
-    else:
-        dataset_name = "WindowDataset"
-
-    if args.model_type == "pos":
-        predictor_name = "WindowModelPredictor"
-    elif args.model_type == "ner":
+    model_type = args.model_type
+    if model_type == "ner":
         predictor_name = "WindowNERTaggerPredictor"
     else:
-        predictor_name = ""
+        predictor_name = "WindowModelPredictor"
 
     if mode == "training":
         name = args.name
@@ -70,27 +66,40 @@ if __name__ == '__main__':
         model_config_name = "WindowTaggerConfig"
         model_type = args.model_type
 
-        if args.pre_trained_embeddings:
-            model_name = "WindowModelWithPreTrainedEmbeddings"
+        # flags
+        if flags["sub_word_units"]:
+            dataset_name = "WindowWithSubWordsDataset"
+            mapper_name = "TokenMapperWithSubWords"
+            model_name = "WindowModelWithSubWords"
+            train(name, model_type, train_path, dev_path, model_config_name, model_config_path, train_config_name,
+                  training_config_path, model_name, mapper_name, predictor_name, dataset_name)
+
         else:
-            model_name = args.model_name
+            if flags["smart_unknown"]:
+                mapper_name = "TokenMapperUnkCategory"
+            else:
+                mapper_name = "TokenMapper"
 
-        if args.unknown_token == "unknown":
-            mapper_name = "TokenMapper",
-        elif args.unknown_token == "smart_unknown":
-            mapper_name = "TokenMapperUnkCategory"
-        else:
-            raise AttributeError("Wrong mapper name")
+            if flags["pre_train"]:
+                model_name = "WindowModelWithPreTrainedEmbeddings"
+            else:
+                model_name = "WindowTagger"
 
-        # train the model
-        train(name, model_type, train_path, dev_path, model_config_name, model_config_path, train_config_name,
-              training_config_path, model_name, mapper_name, predictor_name, dataset_name)
+            dataset_name = "WindowDataset"
+            train(name, model_type, train_path, dev_path, model_config_name, model_config_path, train_config_name,
+                  training_config_path, model_name, mapper_name, predictor_name, dataset_name)
 
-    else:  # mode is inference
+    else:  # inference mode
         test_path = args.test_path
         trained_model_path = args.trained_model_path
         inference_config_path = args.inference_config_path
         inference_config_name = "InferenceConfig"
+
+        # flags
+        if flags["sub_word_units"]:
+            dataset_name = "WindowWithSubWordsDataset"
+        else:
+            dataset_name = "WindowDataset"
 
         predictions = inference(test_path, inference_config_name, inference_config_path,
                                 trained_model_path, predictor_name, dataset_name)

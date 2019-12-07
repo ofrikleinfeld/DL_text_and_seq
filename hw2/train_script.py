@@ -1,6 +1,5 @@
 import torch.nn as nn
 from factory_classes import ConfigsFactory, MappersFactory, ModelsFactory, PredictorsFactory, DatasetsFactory
-from datasets import WindowDataset
 from trainers import ModelTrainer
 
 

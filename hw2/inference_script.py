@@ -3,7 +3,6 @@ from torch.utils import data
 from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
 from models import BaseModel
 from mappers import BaseMapper
-from datasets import WindowDataset
 from configs import BaseConfig
 
 
