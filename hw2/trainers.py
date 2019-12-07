@@ -16,7 +16,7 @@ class ModelTrainer(object):
         self.current_epoch = 0
 
     def save_checkpoint(self, model_name: str) -> None:
-        checkpoint_base_dir = self.train_config.checkpoints_path
+        checkpoint_base_dir = self.train_config["checkpoints_path"]
         current_date = date.today().strftime("%d-%m-%y")
 
         # construct checkpoint folder name and create it
@@ -29,13 +29,12 @@ class ModelTrainer(object):
 
     def train(self, model_name: str, train_dataset: data.Dataset, dev_dataset: data.Dataset):
         # training hyper parameters and configuration
-        batch_size = self.train_config.batch_size
-        num_workers = self.train_config.num_workers
-        num_epochs = self.train_config.num_epochs
-        learning_rate = self.train_config.learning_rate
-        print_batch_step = self.train_config.print_step
-        checkpoint_step = self.train_config.checkpoint_step
-        device = torch.device(self.train_config.device)
+        batch_size = self.train_config["batch_size"]
+        num_workers = self.train_config["num_workers"]
+        num_epochs = self.train_config["num_epochs"]
+        learning_rate = self.train_config["learning_rate"]
+        print_batch_step = self.train_config["print_step"]
+        device = torch.device(self.train_config["device"])
 
         # model, loss and optimizer
         model = self.model

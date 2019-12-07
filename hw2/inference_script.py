@@ -20,46 +20,56 @@ def load_trained_model(path_to_pth_file: str):
     model_state = model_data["state"]
 
     config_data = checkpoint_data["config"]
-    model_config_name = config_data["name"]
     model_config_params = config_data["state"]
 
     mapper_data = checkpoint_data["mapper"]
     mapper_name = mapper_data["name"]
     mapper_state = mapper_data["state"]
 
+    # load a config
+    model_config: BaseConfig = configs_factory("model")
+    model_config.from_dict(model_config_params)
+
     # create a mapper
-    trained_mapper: BaseMapper = mappers_factory(mapper_name)
+    trained_mapper: BaseMapper = mappers_factory.get_from_mapper_name(mapper_name)
     trained_mapper.deserialize(mapper_state)
 
     # creat a config object
-    model_config: BaseConfig = configs_factory(model_config_name, model_config_params)
+    model_config: BaseConfig = configs_factory("model")
+    model_config.from_dict(model_config_params)
 
     # create a model
-    trained_model: BaseModel = models_factory(model_name, model_config, trained_mapper)
+    trained_model: BaseModel = models_factory.get_from_model_name(model_name, model_config, trained_mapper)
     trained_model.load_state_dict(model_state)
 
-    return trained_model
+    return trained_model, model_name
 
 
-def inference(test_path: str, inference_config_name: str, inference_config_path: str, saved_model_path: str,
-              predictor_name: str, dataset_name: str) -> list:
+def inference(test_path: str, inference_config_path: str, saved_model_path: str) -> list:
     # initiate factory object
     config_factory = ConfigsFactory()
     predictors_factory = PredictorsFactory()
     dataset_factory = DatasetsFactory()
 
     # load trained model class and initiate a predictor
-    model: BaseModel = load_trained_model(saved_model_path)
+    inference_config = config_factory("inference").from_json_file(inference_config_path)
+    model, model_name = load_trained_model(saved_model_path)
+    model: BaseModel
     mapper = model.mapper
-    predictor = predictors_factory(predictor_name, mapper)
+    predictor = predictors_factory(inference_config, mapper)
+
+    # check if model is a model with sub word units
+    if "SubWords" in model_name:
+        dataset_name = "WindowWithSubWordsDataset"
+    else:
+        dataset_name = "WindowDataset"
 
     # create dataset object and preform inference
-    test_dataset = dataset_factory(dataset_name, test_path, mapper)
-    inference_config = config_factory(inference_config_name).from_json_file(inference_config_path)
-    test_config_dict = {"batch_size": inference_config.batch_size, "num_workers": inference_config.num_workers}
+    test_dataset = dataset_factory.get_from_dataset_name(dataset_name, test_path, mapper)
+    test_config_dict = {"batch_size": inference_config["batch_size"], "num_workers": inference_config["num_workers"]}
     test_loader = data.DataLoader(test_dataset, **test_config_dict)
 
-    device = torch.device(inference_config.device)
+    device = torch.device(inference_config["device"])
     model = model.to(device)
     model.eval()
     predictions = []

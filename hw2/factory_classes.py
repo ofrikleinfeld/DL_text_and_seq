@@ -7,71 +7,101 @@ from datasets import WindowDataset, WindowWithSubWordsDataset
 
 
 class ConfigsFactory(object):
-    def __call__(self, class_name: str, *constructor_attributes) -> BaseConfig:
+    def __call__(self, config_type: str) -> BaseConfig:
 
-        if class_name == "TrainingConfig":
-            return TrainingConfig(*constructor_attributes)
+        if config_type == "training":
+            return TrainingConfig()
 
-        if class_name == "WindowTaggerConfig":
-            return WindowTaggerConfig(*constructor_attributes)
+        if config_type == "model":
+            return WindowTaggerConfig()
 
-        if class_name == "InferenceConfig":
-            return InferenceConfig(*constructor_attributes)
-
-        raise AttributeError("Unknown config name")
+        if config_type == "inference":
+            return InferenceConfig()
 
 
 class MappersFactory(object):
-    def __call__(self, class_name: str, *constructor_attributes) -> BaseMapper:
+    def __call__(self, parameters_dict: BaseConfig) -> BaseMapper:
 
-        if class_name == "TokenMapper":
-            return TokenMapper(*constructor_attributes)
+        # mapper_attributes
+        min_frequency = parameters_dict["min_frequency"]
+        split_char = parameters_dict["split_char"]
 
-        if class_name == "TokenMapperUnkCategory":
-            return TokenMapperUnkCategory(*constructor_attributes)
+        # flags
+        smart_unknown = parameters_dict["smart_unknown"]
+        sub_word_units = parameters_dict["sub_word_units"]
 
-        if class_name == "TokenMapperWithSubWords":
-            return TokenMapperWithSubWords(*constructor_attributes)
+        if sub_word_units:
+            return TokenMapperWithSubWords(min_frequency, split_char)
 
-        raise AttributeError("Unknown mapper name")
+        if smart_unknown:
+            return TokenMapperUnkCategory(min_frequency, split_char)
+
+        return TokenMapper(min_frequency, split_char)
+
+    def get_from_mapper_name(self, mapper_name):
+
+        if mapper_name == "TokenMapperWithSubWords":
+            return TokenMapperWithSubWords()
+        elif mapper_name == "TokenMapperUnkCategory":
+            return TokenMapperUnkCategory()
+        elif mapper_name == "TokenMapper":
+            return TokenMapper()
+        else:
+            raise AttributeError("Wrong mapper name")
 
 
 class ModelsFactory(object):
-    def __call__(self, class_name: str, *constructor_attributes) -> BaseModel:
 
-        if class_name == "WindowTagger":
-            return WindowTagger(*constructor_attributes)
+    def __call__(self, parameters_dict: BaseConfig, model_config, mapper) -> BaseModel:
 
-        if class_name == "WindowModelWithPreTrainedEmbeddings":
-            pre_trained_attributes = ("vocab.txt", "wordVectors.txt")
-            constructor_attributes += pre_trained_attributes
-            return WindowModelWithPreTrainedEmbeddings(*constructor_attributes)
+        # flags
+        sub_word_units = parameters_dict["sub_word_units"]
+        pre_trained_embeddings = parameters_dict["pre_trained_embeddings"]
 
-        if class_name == "WindowModelWithSubWords":
-            return WindowModelWithSubWords(*constructor_attributes)
+        if sub_word_units:
+            if pre_trained_embeddings:
+                return WindowModelWithSubWords(model_config, mapper, pre_trained=True)
+            else:
+                return WindowModelWithSubWords(model_config, mapper, pre_trained=False)
 
-        raise AttributeError("Unknown model name")
+        if pre_trained_embeddings:
+            return WindowModelWithPreTrainedEmbeddings(model_config, mapper,pre_trained_vocab_path="vocab.txt",
+                                                       pre_trained_embedding_path="wordVectors.txt")
+        return WindowTagger(model_config, mapper)
+
+    def get_from_model_name(self, model_name, model_config, mapper):
+
+        if model_name == "WindowModelWithSubWords":
+            return WindowModelWithSubWords(model_config, mapper)
+        else:
+            return WindowTagger(model_config, mapper)
 
 
 class PredictorsFactory(object):
-    def __call__(self, class_name: str, *constructor_attributes) -> BasePredictor:
+    def __call__(self, parameters_dict: BaseConfig, mapper) -> BasePredictor:
 
-        if class_name == "WindowModelPredictor":
-            return WindowModelPredictor(*constructor_attributes)
+        model_type = parameters_dict["model_type"].lower()
+        if model_type == "ner":
+            return WindowNERTaggerPredictor(mapper)
 
-        if class_name == "WindowNERTaggerPredictor":
-            return WindowNERTaggerPredictor(*constructor_attributes)
-
-        raise AttributeError("Unknown predictor name")
+        return WindowModelPredictor(mapper)
 
 
 class DatasetsFactory(object):
-    def __call__(self, class_name: str, *constructor_attributes) -> data.Dataset:
+    def __call__(self, parameters_dict: BaseConfig, file_path: str, mapper, window_size: int = 2) -> data.Dataset:
 
-        if class_name == "WindowDataset":
-            return WindowDataset(*constructor_attributes)
+        # flags
+        sub_word_units = parameters_dict["sub_word_units"]
 
-        if class_name == "WindowWithSubWordsDataset":
-            return WindowWithSubWordsDataset(*constructor_attributes)
+        if sub_word_units:
+            return WindowWithSubWordsDataset(file_path, mapper, window_size)
 
-        raise AttributeError("Unknown dataset name")
+        else:
+            return WindowDataset(file_path, mapper, window_size)
+
+    def get_from_dataset_name(self, dataset_name, file_path, mapper, window_size=2):
+
+        if dataset_name == "WindowWithSubWordsDataset":
+            return WindowWithSubWordsDataset(file_path, mapper, window_size)
+        else:
+            return WindowDataset(file_path, mapper, window_size)

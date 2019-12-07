@@ -1,10 +1,18 @@
 {
-	"batch_size": 64
-	,"num_workers": 12
-	,"device": "cuda"
-	,"num_epochs": 10
-	,"print_step": 50
-    ,"learning_rate": 4e-3
-	,"checkpoints_path": "checkpoints"
-	,"checkpoint_step": 30
+	"model_type": "ner",
+	"train_path": "ner/train",
+	"dev_path": "ner/dev",
+	"batch_size": 64,
+	"num_workers": 12,
+	"device": "cuda",
+	"num_epochs": 10,
+	"print_step": 50,
+    "learning_rate": 4e-3,
+	"checkpoints_path": "checkpoints",
+	"min_frequency": 5,
+	"split_char" : "\t",
+	"pre_trained_embeddings": "true",
+	"sub_word_units": "false",
+	"smart_unknown": "true"
+
 }
