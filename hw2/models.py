@@ -34,11 +34,11 @@ class WindowTagger(BaseModel):
 
     def __init__(self, config: WindowTaggerConfig, mapper: BaseMapper):
         super().__init__(config, mapper)
-        embedding_dim = config.embedding_dim
-        window_size = config.window_size
+        embedding_dim = config["embedding_dim"]
+        window_size = config["window_size"]
         tokens_dim = mapper.get_tokens_dim()
         labels_dim = mapper.get_labels_dim()
-        hidden_dim = config.hidden_dim
+        hidden_dim = config["hidden_dim"]
 
         # layers
         input_dim = (2 * window_size + 1) * embedding_dim
@@ -60,7 +60,7 @@ class ModelWithPreTrainedEmbeddings(BaseModel):
     def __init__(self, config: ModelConfig, mapper: BaseMapper):
         super().__init__(config, mapper)
         self.tokens_dim = mapper.get_tokens_dim()
-        self.embedding_dim = config.embedding_dim
+        self.embedding_dim = config["embedding_dim"]
         self.embedding = nn.Embedding(self.tokens_dim, self.embedding_dim)
         self.num_pre_trained_used = 0
 
@@ -99,10 +99,10 @@ class WindowModelWithPreTrainedEmbeddings(ModelWithPreTrainedEmbeddings):
         self.load_pre_trained_embeddings(pre_trained_vocab_path, pre_trained_embedding_path)
 
         # define hyper parameters and layers
-        window_size = config.window_size
+        window_size = config["window_size"]
         tokens_dim = mapper.get_tokens_dim()
         labels_dim = mapper.get_labels_dim()
-        hidden_dim = config.hidden_dim
+        hidden_dim = config["hidden_dim"]
 
         input_dim = (2 * window_size + 1) * self.embedding_dim
         self.embedding = nn.Embedding(tokens_dim, self.embedding_dim)
@@ -126,8 +126,8 @@ class WindowModelWithSubWords(ModelWithPreTrainedEmbeddings):
             self.load_pre_trained_embeddings(pre_trained_vocab_path, pre_trained_embedding_path)
 
         # define hyper parameters and layers
-        window_size = config.window_size
-        hidden_dim = config.hidden_dim
+        window_size = config["window_size"]
+        hidden_dim = config["hidden_dim"]
         labels_dim = mapper.get_labels_dim()
         prefix_dim = mapper.get_prefix_dim()
         suffix_dim = mapper.get_suffix_dim()

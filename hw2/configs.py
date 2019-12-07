@@ -7,13 +7,29 @@ class BaseConfig(object):
     """
 
     def __init__(self, config_dict: dict = None):
+        self.config = {}
         if config_dict is not None:
             self.from_dict(config_dict)
+
+    def __getitem__(self, item):
+        return self.config[item]
+
+    def add_key_value(self, key, value) -> None:
+        self.config[key] = value
 
     def from_dict(self, parameters: dict):
         """Constructs a `Config` from a Python dictionary of parameters."""
         for key, value in parameters.items():
-            self.__dict__[key] = value
+
+            if type(value) == str:
+                value_lower_case = value.lower()
+
+                if value_lower_case == "false":
+                    value = False
+                elif value_lower_case == "true":
+                    value = True
+
+            self.config[key] = value
 
         return self
 
@@ -27,7 +43,7 @@ class BaseConfig(object):
 
     def to_dict(self) -> dict:
         """Serializes this instance to a Python dictionary."""
-        output = self.__dict__
+        output = self.config
         return output
 
     def to_json_string(self) -> str:
@@ -47,42 +63,41 @@ class ModelConfig(BaseConfig):
     def __init__(self, config_dict=None, embedding_dim: int = 50):
         super().__init__(config_dict)
         if config_dict is None:
-            self.embedding_dim = embedding_dim
+            self.config["embedding_dim"] = embedding_dim
 
 
 class WindowTaggerConfig(ModelConfig):
     """
     Dedicated config class for the Window based tagger model
     """
-    def __init__(self, config_dict=None,
-                 embedding_dim: int = 50, hidden_dim: int = 500,
-                 window_size: int = 2):
+    def __init__(self, config_dict=None, embedding_dim: int = 50, hidden_dim: int = 500, window_size: int = 2):
         super().__init__(config_dict, embedding_dim)
         if config_dict is None:
-            self.embedding_dim = embedding_dim
-            self.hidden_dim = hidden_dim
-            self.window_size = window_size
+            self.config["hidden_dim"] = hidden_dim
+            self.config["window_size"] = window_size
 
 
 class TrainingConfig(BaseConfig):
     """
     Configuration class to store training and data loading configurations.
     """
-    def __init__(self, config_dict=None, batch_size: int = 16, num_workers: int = 12,
+    def __init__(self, config_dict=None, model_type: str = "ner",
+                 batch_size: int = 16, num_workers: int = 12,
                  device: str = "cpu", num_epochs: int = 30, learning_rate: float = 1e-4,
                  checkpoints_path: str = "checkpoints", checkpoint_step: int = 10,
                  print_step: int = 50):
         super().__init__(config_dict)
 
         if config_dict is None:
-            self.batch_size = batch_size
-            self.num_workers = num_workers
-            self.device = device
-            self.num_epochs = num_epochs
-            self.learning_rate = learning_rate
-            self.checkpoints_path = checkpoints_path
-            self.checkpoint_step = checkpoint_step
-            self.print_step = print_step
+            self.config["model_type"] = model_type
+            self.config["batch_size"] = batch_size
+            self.config["num_workers"] = num_workers
+            self.config["device"] = device
+            self.config["num_epochs"] = num_epochs
+            self.config["learning_rate"] = learning_rate
+            self.config["checkpoints_path"] = checkpoints_path
+            self.config["checkpoint_step"] = checkpoint_step
+            self.config["print_step"] = print_step
 
 
 class InferenceConfig(BaseConfig):
@@ -90,6 +105,6 @@ class InferenceConfig(BaseConfig):
         super().__init__(config_dict)
 
         if config_dict is None:
-            self.batch_size = batch_size
-            self.num_workers = num_workers
-            self.device = device
+            self.config["batch_size"] = batch_size
+            self.config["num_workers"] = num_workers
+            self.config["device"] = device
