@@ -118,7 +118,10 @@ test
 hw2/*.txt
 
 # ignore save checkpoints
-checkpoints/
+hw2/experiments/*
 
-# ingore logs
-hw2/logs/
+# ignore pdf docx and xlsx files
+*.pdf
+*.docx
+*.xlsx
+
