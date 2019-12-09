@@ -60,12 +60,13 @@ class ModelsFactory(object):
 
         if sub_word_units:
             if pre_trained_embeddings:
-                return WindowModelWithSubWords(model_config, mapper, pre_trained=True)
+                return WindowModelWithSubWords(model_config, mapper, pre_trained=True,
+                                               pre_trained_vocab_path="vocab.txt", pre_trained_embedding_path="wordVectors.txt")
             else:
                 return WindowModelWithSubWords(model_config, mapper, pre_trained=False)
 
         if pre_trained_embeddings:
-            return WindowModelWithPreTrainedEmbeddings(model_config, mapper,pre_trained_vocab_path="vocab.txt",
+            return WindowModelWithPreTrainedEmbeddings(model_config, mapper, pre_trained_vocab_path="vocab.txt",
                                                        pre_trained_embedding_path="wordVectors.txt")
         return WindowTagger(model_config, mapper)
 

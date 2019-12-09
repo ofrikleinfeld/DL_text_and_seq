@@ -57,7 +57,7 @@ class ModelTrainer(object):
             epoch_train_loss = 0
             epoch_num = epoch + 1
 
-            for batch_idx, sample in enumerate(training_loader):
+            for batch_idx, sample in enumerate(training_loader, 1):
 
                 x, y = sample
                 x, y = x.to(device), y.to(device)
