@@ -267,6 +267,22 @@ class TokenMapperWithSubWords(TokenMapperUnkCategory):
         self.suffix_to_index = {}
         self.index_to_suffix = {}
 
+    def serialize(self) -> dict:
+        params_dict = super().serialize()
+        params_dict["prefix_to_index"] = self.prefix_to_index
+        params_dict["suffix_to_index"] = self.suffix_to_index
+        params_dict["index_to_prefix"] = self.index_to_suffix
+        params_dict["index_to_suffix"] = self.index_to_suffix
+
+        return params_dict
+
+    def deserialize(self, serialized_mapper: dict) -> None:
+        super().deserialize(serialized_mapper)
+        self.prefix_to_index = serialized_mapper["prefix_to_index"]
+        self.suffix_to_index = serialized_mapper["suffix_to_index"]
+        self.index_to_prefix = serialized_mapper["index_to_prefix"]
+        self.index_to_suffix = serialized_mapper["index_to_suffix"]
+
     def get_prefix_index(self, prefix: str) -> int:
         if prefix in self.prefix_to_index:
             return self.prefix_to_index[prefix]
