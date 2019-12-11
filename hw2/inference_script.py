@@ -60,7 +60,6 @@ def save_predictions_to_file(test_path: str, predictions: list, save_model_path:
                     prediction_line = f"{word} {label}\n"
                     out_file.write(prediction_line)
                     index += 1  # don't forge to move to next prediction
-    assert index == len(predictions), "for some reason number of predictions doesn't match number of word to predict in file"
 
 
 def inference(test_path: str, inference_config_path: str, saved_model_path: str, save_predictions_path: str) -> None:

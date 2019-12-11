@@ -100,7 +100,7 @@ The second configuration file is called "model config: and it has the following 
 - min_frequency - defines which words will be used as part training vocabulary. for example setting min_frequency to 5 means that only words appearing at least 5 times on the training set will be considered as seen in during training
 - split_char: used for parsing the training data and separating between tokens and labels
 - pre_trained embedding - should be one of ["true","false"]. if you want to use pre trained embeddings you need to have 2 files on your working dir, called vocab.txt (file of vocabulary tokens, one in a line) and wordVectors.txt (file of actual embeddings, each line is a vector)
-- sub_word units - whether to use additinal embeddigs of sub word units (3 first letters and 3 last letters of each token)
+- sub_word units - whether to use additional embeddings of sub word units (3 first letters and 3 last letters of each token)
 - smart_unknown - whether to group unknown words during training to groups such as numbers/dates/all captial etc. if these option if off, on token "UNK" will be used for every word not part of the vocabulary during training.  
  
 #### prediction/inference:
