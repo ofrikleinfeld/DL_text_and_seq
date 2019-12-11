@@ -1,6 +1,6 @@
 import torch
 import torch.utils.data as data
-from mappers import BaseMapper, TokenMapperWithSubWords, BEGIN, END, START_LINE
+from mappers import BaseMapper, TokenMapperWithSubWords, BEGIN, END
 
 
 class WindowDataset(data.Dataset):
@@ -21,10 +21,6 @@ class WindowDataset(data.Dataset):
         curr_labels = []
         with open(self.filepath, "r", encoding="utf8") as f:
             for line in f:
-                # skip start of file line
-                if line.startswith(START_LINE):
-                    continue
-
                 if line == "\n":  # marks end of sentence
                     self._create_window_samples_from_sent(curr_sent, curr_labels)
                     # clear before reading next sentence
@@ -112,10 +108,6 @@ class WindowWithSubWordsDataset(WindowDataset):
 
         with open(self.filepath, "r", encoding="utf8") as f:
             for line in f:
-                # skip start of file line
-                if line.startswith(START_LINE):
-                    continue
-
                 if line == "\n":  # marks end of sentence
                     self._create_window_samples_from_sent(curr_sent, curr_labels)
                     self._create_window_samples_for_prefix_suffix(curr_prefixes, curr_suffixes)

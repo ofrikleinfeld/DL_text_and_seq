@@ -4,7 +4,6 @@ from collections import OrderedDict
 UNK = "UNK"
 BEGIN = "<s>"
 END = "</s>"
-START_LINE = "-DOCSTART-"
 
 
 class BaseMapper(object):
@@ -89,9 +88,6 @@ class TokenMapper(BaseMapper):
         with open(filepath, "r", encoding="utf8") as f:
             for line in f:
 
-                # skip start of document
-                if line.startswith(START_LINE):
-                    continue
                 # skip empty line (end of sentence_
                 if line == "\n":
                     continue
@@ -331,10 +327,6 @@ class TokenMapperWithSubWords(TokenMapperUnkCategory):
 
         with open(filepath, "r", encoding="utf8") as f:
             for line in f:
-
-                # skip start of document
-                if line.startswith(START_LINE):
-                    continue
                 # skip empty line (end of sentence_
                 if line == "\n":
                     continue

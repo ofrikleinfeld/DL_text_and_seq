@@ -2,7 +2,7 @@ import torch
 from torch.utils import data
 from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
 from models import BaseModel
-from mappers import BaseMapper, START_LINE
+from mappers import BaseMapper
 from configs import BaseConfig
 
 
@@ -51,16 +51,13 @@ def save_predictions_to_file(test_path: str, predictions: list, save_model_path:
         with open(test_path, "r", encoding="utf8") as test_path:
             for line in test_path:
 
-                # skip start of document
-                if line.startswith(START_LINE):  # just skip it
-                    continue
-                # skip empty line (end of sentence_
+                # skip empty line (end of sentence)
                 if line == "\n":
                     out_file.write("\n")  # end of sentence in prediction file
                 else:  # valid line of a word we need to label
-                    word = line
+                    word = line[:-1]
                     label = predictions[index]
-                    prediction_line = f"{word}\t{label}\n"
+                    prediction_line = f"{word} {label}\n"
                     out_file.write(prediction_line)
                     index += 1  # don't forge to move to next prediction
     assert index == len(predictions), "for some reason number of predictions doesn't match number of word to predict in file"
