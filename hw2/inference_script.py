@@ -2,7 +2,7 @@ import torch
 from torch.utils import data
 from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
 from models import BaseModel
-from mappers import BaseMapper
+from mappers import BaseMapper, START_LINE
 from configs import BaseConfig
 
 
@@ -45,7 +45,28 @@ def load_trained_model(path_to_pth_file: str):
     return trained_model, model_name
 
 
-def inference(test_path: str, inference_config_path: str, saved_model_path: str) -> list:
+def save_predictions_to_file(test_path: str, predictions: list, save_model_path: str):
+    index = 0
+    with open(save_model_path, "w") as out_file:
+        with open(test_path, "r", encoding="utf8") as test_path:
+            for line in test_path:
+
+                # skip start of document
+                if line.startswith(START_LINE):  # just skip it
+                    continue
+                # skip empty line (end of sentence_
+                if line == "\n":
+                    out_file.write("\n")  # end of sentence in prediction file
+                else:  # valid line of a word we need to label
+                    word = line
+                    label = predictions[index]
+                    prediction_line = f"{word}\t{label}\n"
+                    out_file.write(prediction_line)
+                    index += 1  # don't forge to move to next prediction
+    assert index == len(predictions), "for some reason number of predictions doesn't match number of word to predict in file"
+
+
+def inference(test_path: str, inference_config_path: str, saved_model_path: str, save_predictions_path: str) -> None:
     # initiate factory object
     config_factory = ConfigsFactory()
     predictors_factory = PredictorsFactory()
@@ -74,6 +95,7 @@ def inference(test_path: str, inference_config_path: str, saved_model_path: str)
     model.eval()
     predictions = []
 
+    # run the model in batches to create the predictions
     with torch.no_grad():
 
         for batch_idx, sample in enumerate(test_loader):
@@ -86,4 +108,5 @@ def inference(test_path: str, inference_config_path: str, saved_model_path: str)
                 predicted_label = mapper.get_label_from_idx(prediction)
                 predictions.append(predicted_label)
 
-    return predictions
+    save_predictions_to_file(test_path, predictions, save_predictions_path)
+
