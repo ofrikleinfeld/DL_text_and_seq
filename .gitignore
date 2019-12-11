@@ -116,6 +116,7 @@ test
 
 # ignore text files for hw2
 hw2/*.txt
+!hw2/requirements.txt
 
 # ignore save checkpoints
 hw2/experiments/*

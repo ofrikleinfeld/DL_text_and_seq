@@ -4,6 +4,10 @@ The code for this assignment lets you run a Pytorch application for training and
 
 ## Usage
 
+### Dependecny Packages
+The project has a standard "requirements.txt" file
+You can use pip with the flag -r requirements.txt to download the required dependencies to your virtual enviroment
+
 ### Possible Commands
 You can run this application as a command line utility:
 ```sh
@@ -39,6 +43,7 @@ optional arguments:
   --test_path TEST_PATH
                         a path to a test set file
   --trained_model_path TRAINED_MODEL_PATH a path to a trained model checkpoint
+  --save_output_path SAVE_OUTPUT_PATH a path to a save the prediction results
   --inference_config_path INFERENCE_CONFIG_PATH
                         path to a json file containing model hyper parameters
                         for inference procedure
