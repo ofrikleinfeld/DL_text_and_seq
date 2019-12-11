@@ -21,23 +21,15 @@ if __name__ == '__main__':
                                  help="path to a json file containing model hyper parameters")
     training_parser.add_argument("--training_config_path", type=str, required=False, default="training_config.json",
                                  help="path to a json file containing hyper parameters for training procedure")
-    # training_parser.add_argument("--model_type", type=str, required=True, choices=["pos", "ner"],
-    #                              help="which model to use during training (effects accuracy computation)")
-    # training_parser.add_argument("--smart_unknown", action="store_true", required=False,
-    #                              help="Group tokens not seen on train data to distinctive groups such as numbers, dates, captial letters etc.")
-    # training_parser.add_argument("--pre_trained_embeddings", action="store_true", required=False,
-    #                              help="Whether to use pre trained word embeddings or not")
-    # training_parser.add_argument("--sub_word_units", action="store_true", required=False,
-    #                              help="Whether to use sub word units embeddings or not")
 
     inference_parser = subparsers.add_parser('inference')
     inference_parser.add_argument("--test_path", type=str, required=True,
                                   help="a path to a test set file")
     inference_parser.add_argument("--trained_model_path", type=str, required=True,
-                                  help="a path to a trained model checkpoint")
+                                  help="a path to a trained model checkpoint (.pth file")
     inference_parser.add_argument("--save_output_path", type=str, required=True,
                                   help="a path to a save the prediction results ")
-    inference_parser.add_argument("--inference_config_path", type=str, required=False, default="inference_config.json",
+    inference_parser.add_argument("--inference_config_path", type=str, required=False, default="ner_inference_config.json",
                                   help="path to a json file containing model hyper parameters for inference procedure")
 
     args = parser.parse_args(sys.argv[1:])
