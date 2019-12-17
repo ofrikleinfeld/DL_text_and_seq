@@ -1,5 +1,5 @@
 {
-	"hidden_dim": 500
+	"hidden_dim": 150
 	,"embedding_dim": 50
     ,"window_size": 2
 }
