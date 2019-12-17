@@ -1,4 +1,7 @@
+from typing import List, Tuple
+
 import torch
+
 from mappers import BaseMapper
 
 
@@ -23,26 +26,7 @@ class BasePredictor(object):
         sample_tokens = torch.tensor(sample_tokens)
         return self.infer_sample(model, sample_tokens)
 
-    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> (int, int):
-        raise NotImplementedError("A class deriving from BasePredictor must implement infer_model_outputs_with_gold_labels method")
-
-
-class WindowModelPredictor(BasePredictor):
-
-    def __init__(self, mapper: BaseMapper):
-        super().__init__(mapper)
-
-    def infer_model_outputs(self, model_outputs: torch.tensor):
-        predictions = []
-        _, labels_tokens = torch.max(model_outputs, dim=1)
-
-        for i in range(len(model_outputs)):  # every sample in case of batch (even batch of size 1)
-            current_prediction = labels_tokens[i].item()
-            predictions.append(current_prediction)
-
-        return predictions
-
-    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> (int, int):
+    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> Tuple[int, int]:
         num_correct = 0
         num_predictions = 0
         gold_labels = []
@@ -59,6 +43,22 @@ class WindowModelPredictor(BasePredictor):
                 num_correct += 1
 
         return num_correct, num_predictions
+
+
+class WindowModelPredictor(BasePredictor):
+
+    def __init__(self, mapper: BaseMapper):
+        super().__init__(mapper)
+
+    def infer_model_outputs(self, model_outputs: torch.tensor):
+        predictions = []
+        _, labels_tokens = torch.max(model_outputs, dim=1)
+
+        for i in range(len(model_outputs)):  # every sample in case of batch (even batch of size 1)
+            current_prediction = labels_tokens[i].item()
+            predictions.append(current_prediction)
+
+        return predictions
 
 
 class WindowNERTaggerPredictor(WindowModelPredictor):
@@ -88,3 +88,19 @@ class WindowNERTaggerPredictor(WindowModelPredictor):
                 num_predictions += 1
 
         return num_correct, num_predictions
+
+
+class AcceptorPredictor(BasePredictor):
+
+    def __init__(self, mapper: BaseMapper):
+        super().__init__(mapper)
+
+    def infer_model_outputs(self, model_outputs: torch.tensor) -> List[int]:
+        predictions = []
+        _, labels_tokens = torch.max(model_outputs)
+
+        for i in range(len(model_outputs)):  # every sample in case of batch (even batch of size 1)
+            current_prediction = labels_tokens[i].item()
+            predictions.append(current_prediction)
+
+        return predictions
