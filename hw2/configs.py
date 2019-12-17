@@ -108,6 +108,20 @@ class TrainingConfig(BaseConfig):
             self.config["print_step"] = print_step
 
 
+class AcceptorTrainConfig(TrainingConfig):
+
+    def __init__(self, config_dict=None, model_type: str = "reg_lan_acceptor",
+                 batch_size: int = 16, num_workers: int = 12,
+                 device: str = "cpu", num_epochs: int = 30, learning_rate: float = 1e-4,
+                 checkpoints_path: str = "checkpoints", checkpoint_step: int = 10,
+                 print_step: int = 50, sequence_length: int = 65):
+        super().__init__(config_dict, model_type, batch_size, num_workers, device,
+                         num_epochs, learning_rate, checkpoints_path, checkpoint_step,
+                         print_step)
+        if config_dict is None:
+            self.config["sequence_length"] = sequence_length
+
+
 class InferenceConfig(BaseConfig):
     def __init__(self, config_dict=None, batch_size: int = 16, num_workers: int = 12, device: str = "cpu"):
         super().__init__(config_dict)
