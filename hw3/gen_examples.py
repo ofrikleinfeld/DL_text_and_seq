@@ -39,12 +39,20 @@ def generate_training_test_sets(num_training: int, train_out_path: str, num_test
     positive_test = generate_examples(POSITIVE_PATTERN, num_positive_test)
     negative_test = generate_examples(NEGATIVE_PATTERN, num_negative_test)
 
+    # generate labels
+    positive_train_labels = [1] * num_positive_train
+    negative_train_labels = [0] * num_negative_train
+    positive_test_labels = [1] * num_positive_test
+    negative_test_labels = [0] * num_negative_train
+
     train_samples = positive_train + negative_train
+    train_labels = positive_train_labels + negative_train_labels
     test_samples = positive_test + negative_test
+    test_labels = positive_test_labels + negative_test_labels
 
     # write to output files
-    write_examples_to_file(train_samples, train_out_path)
-    write_examples_to_file(test_samples, test_out_path)
+    write_examples_to_file(train_samples, train_out_path, train_labels)
+    write_examples_to_file(test_samples, test_out_path, test_labels)
 
 
 if __name__ == '__main__':
