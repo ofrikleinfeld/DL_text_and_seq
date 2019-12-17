@@ -1,6 +1,9 @@
+from typing import List, Tuple
+
 import torch
 import torch.utils.data as data
-from mappers import BaseMapper, TokenMapperWithSubWords, BEGIN, END
+
+from mappers import BaseMapper, TokenMapperWithSubWords, RegularLanguageMapper, BEGIN, END, PAD
 
 
 class WindowDataset(data.Dataset):
@@ -159,4 +162,60 @@ class WindowWithSubWordsDataset(WindowDataset):
         else:
             y = torch.tensor([])
 
+        return x, y
+
+
+class RegularLanguageDataset(data.Dataset):
+
+    def __init__(self, filepath: str, mapper: BaseMapper, sequence_length: int = 65):
+        self.filepath = filepath
+        self.mapper = mapper
+        self.sequence_length = sequence_length
+        self.samples = []
+        self.labels = []
+
+    def _load_file(self) -> None:
+        with open(self.filepath, "r", encoding="utf8") as f:
+            for line in f:
+                sample, label = line[:-1].split(self.mapper.split_char)
+                sample = self._prune_or_pad_sample(sample)
+                self.samples.append(sample)
+                self.labels.append(label)
+
+    def _prune_or_pad_sample(self, sample: str) -> str:
+        # padding or pruning
+        const_len_sample: str
+        sample_length = len(sample)
+
+        if sample_length > self.sequence_length:
+            const_len_sample = sample[:self.sequence_length]
+
+        else:
+            padding_length = self.sequence_length - sample_length
+            const_len_sample = sample + PAD * padding_length
+
+        return const_len_sample
+
+    def __len__(self) -> int:
+        # perform lazy evaluation of data loading
+        if len(self.samples) == 0:
+            self._load_file()
+
+        return len(self.samples)
+
+    def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
+        # lazy evaluation of data loading
+        if len(self.samples) == 0:
+            self._load_file()
+
+        # retrieve sample and transform from tokens to indices
+        sample = self.samples[item_idx]
+        label = self.labels[item_idx]
+
+        sample_indices = [self.mapper.get_token_idx(word) for word in sample]
+        label_index = self.mapper.get_label_idx(label)
+
+        x = torch.tensor(sample_indices)
+        y = torch.tensor(label_index)
+        
         return x, y
