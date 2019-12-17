@@ -394,3 +394,6 @@ class RegularLanguageMapper(BaseMapper):
 
     def get_label_idx(self, raw_label: str) -> int:
         return self.label_to_idx[raw_label]
+
+    def get_padding_index(self) -> int:
+        return self.get_token_idx(PAD)

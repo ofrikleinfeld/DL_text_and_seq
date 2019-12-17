@@ -217,5 +217,5 @@ class RegularLanguageDataset(data.Dataset):
 
         x = torch.tensor(sample_indices)
         y = torch.tensor(label_index)
-        
+
         return x, y

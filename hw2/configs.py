@@ -77,6 +77,14 @@ class WindowTaggerConfig(ModelConfig):
             self.config["window_size"] = window_size
 
 
+class AcceptorConfig(ModelConfig):
+
+    def __init__(self, config_dict=None, embedding_dim: int = 59, hidden_dim: int = 150):
+        super().__init__(config_dict, embedding_dim)
+        if config_dict is None:
+            self.config["hidden_dim"] = hidden_dim
+
+
 class TrainingConfig(BaseConfig):
     """
     Configuration class to store training and data loading configurations.

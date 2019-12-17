@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from configs import ModelConfig, WindowTaggerConfig
-from mappers import BaseMapper, TokenMapperWithSubWords
+from configs import ModelConfig, WindowTaggerConfig, AcceptorConfig
+from mappers import BaseMapper, TokenMapperWithSubWords, RegularLanguageMapper
 
 
 class BaseModel(nn.Module):
@@ -151,4 +151,31 @@ class WindowModelWithSubWords(ModelWithPreTrainedEmbeddings):
         hidden = torch.tanh(self.hidden(embedding))
         y_hat = self.output(hidden)
 
+        return y_hat
+
+
+class AcceptorLSTM(BaseModel):
+    def __init__(self, config: AcceptorConfig, mapper: RegularLanguageMapper):
+        super().__init__(config, mapper)
+        self.tokens_dim = mapper.get_tokens_dim()
+        self.labels_dim = mapper.get_labels_dim()
+        self.padding_idx = mapper.get_padding_index()
+        self.embedding_dim = config["embedding_dim"]
+        self.hidden_dim = config["hidden"]
+        self.embedding = nn.Embedding(self.tokens_dim, self.embedding_dim, padding_idx=self.padding_idx)
+        self.dropout = nn.Dropout(p=0.5)
+        self.lstm = nn.LSTM(input_size=self.embedding_dim, hidden_size=self.hidden_dim,
+                            batch_first=True, bidirectional=False)
+        self.linear = nn.Linear(in_features=self.hidden_dim, out_features=self.labels_dim)
+
+    def forward(self, x: torch.tensor) -> torch.tensor:
+        x = self.embedding(x)
+        x = self.dropout(x)
+        _, last_hidden = self.lstm(x)
+
+        h_n, _ = last_hidden
+        _, batch, features = h_n.size()
+        h_n = h_n.view(batch, features)
+
+        y_hat = self.linear(h_n)
         return y_hat
