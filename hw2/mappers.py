@@ -2,6 +2,7 @@ import re
 from collections import OrderedDict
 
 UNK = "UNK"
+PAD = "PADDDD"
 BEGIN = "<s>"
 END = "</s>"
 
@@ -354,3 +355,42 @@ class TokenMapperWithSubWords(TokenMapperUnkCategory):
         for index, suffix in enumerate(suffixes.keys(), suffix_start_index):
             self.suffix_to_index[suffix] = index
             self.index_to_suffix[index] = suffix
+
+
+class RegularLanguageMapper(BaseMapper):
+
+    def __init__(self, min_frequency: int = 0, split_char: str = "\t"):
+        super().__init__(min_frequency, split_char)
+
+    def create_mapping(self, filepath: str = None) -> None:
+        token_to_idx = {
+            PAD: 0,
+            "1": 1,
+            "2": 2,
+            "3": 3,
+            "4": 4,
+            "5": 5,
+            "6": 6,
+            "7": 7,
+            "8": 8,
+            "9": 9,
+            "a": 10,
+            "b": 11,
+            "c": 12,
+            "d": 13
+        }
+        label_to_idx = {
+            "1": 1,
+            "0": 0
+        }
+
+        self.token_to_idx = token_to_idx
+        self.label_to_idx = label_to_idx
+        self.idx_to_token = {value: key for key, value in token_to_idx.items()}
+        self.idx_to_label = {value: key for key, value in label_to_idx.items()}
+
+    def get_token_idx(self, raw_token: str) -> int:
+        return self.token_to_idx[raw_token]
+
+    def get_label_idx(self, raw_label: str) -> int:
+        return self.label_to_idx[raw_label]
