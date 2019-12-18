@@ -1,9 +1,9 @@
-from typing import List, Tuple
+from typing import  Tuple
 
 import torch
 import torch.utils.data as data
 
-from mappers import BaseMapper, TokenMapperWithSubWords, RegularLanguageMapper, BEGIN, END, PAD
+from mappers import BaseMapper, TokenMapperWithSubWords, BEGIN, END, CHAR_PAD
 
 
 class WindowDataset(data.Dataset):
@@ -192,7 +192,7 @@ class RegularLanguageDataset(data.Dataset):
 
         else:
             padding_length = self.sequence_length - sample_length
-            const_len_sample = sample + PAD * padding_length
+            const_len_sample = sample + CHAR_PAD * padding_length
 
         return const_len_sample
 

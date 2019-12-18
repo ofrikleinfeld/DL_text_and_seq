@@ -2,7 +2,7 @@ import re
 from collections import OrderedDict
 
 UNK = "UNK"
-PAD = "PADDDD"
+CHAR_PAD = "*"
 BEGIN = "<s>"
 END = "</s>"
 
@@ -364,7 +364,7 @@ class RegularLanguageMapper(BaseMapper):
 
     def create_mapping(self, filepath: str = None) -> None:
         token_to_idx = {
-            PAD: 0,
+            CHAR_PAD: 0,
             "1": 1,
             "2": 2,
             "3": 3,
@@ -396,4 +396,4 @@ class RegularLanguageMapper(BaseMapper):
         return self.label_to_idx[raw_label]
 
     def get_padding_index(self) -> int:
-        return self.get_token_idx(PAD)
+        return self.get_token_idx(CHAR_PAD)
