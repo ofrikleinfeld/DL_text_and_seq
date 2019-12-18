@@ -1,0 +1,13 @@
+{
+	"model_type": "acceptor",
+	"batch_size": 64,
+	"num_workers": 12,
+	"device": "cuda",
+	"num_epochs": 10,
+	"print_step": 10,
+    "learning_rate": 3e-2,
+	"checkpoints_path": "acceptor_experiments/regex_lan",
+	"min_frequency": 0,
+	"split_char" : "\t",
+	"sequence_length": 65
+}
