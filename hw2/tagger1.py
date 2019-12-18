@@ -13,6 +13,8 @@ if __name__ == '__main__':
     training_parser = subparsers.add_parser('training')
     training_parser.add_argument("--name", type=str, required=True, metavar='ner_tagger',
                                  help='unique name of the training procedure (used for checkpoint saving')
+    training_parser.add_argument("--model_type", type=str, required=True, choices=["window_ner", "window_pos", "acceptor"],
+                                 help='unique name of the training procedure (used for checkpoint saving')
     training_parser.add_argument("--train_path", type=str, required=True,
                                  help="a path to training file")
     training_parser.add_argument("--dev_path", type=str, required=True,
@@ -36,11 +38,12 @@ if __name__ == '__main__':
     mode = sys.argv[1]
     if mode == "training":
         name = args.name
+        model_type = args.model_type
         train_path = args.train_path
         dev_path = args.dev_path
         model_config_path = args.model_config_path
         training_config_path = args.training_config_path
-        train(name, train_path, dev_path, model_config_path, training_config_path)
+        train(name, model_type, train_path, dev_path, model_config_path, training_config_path)
 
     if mode == "inference":
         test_path = args.test_path

@@ -27,16 +27,13 @@ def load_trained_model(path_to_pth_file: str):
     mapper_state = mapper_data["state"]
 
     # load a config
-    model_config: BaseConfig = configs_factory("model")
+    model_name_case_insensitive = model_name.lower()
+    model_config: BaseConfig = configs_factory(model_name_case_insensitive)
     model_config.from_dict(model_config_params)
 
     # create a mapper
     trained_mapper: BaseMapper = mappers_factory.get_from_mapper_name(mapper_name)
     trained_mapper.deserialize(mapper_state)
-
-    # creat a config object
-    model_config: BaseConfig = configs_factory("model")
-    model_config.from_dict(model_config_params)
 
     # create a model
     trained_model: BaseModel = models_factory.get_from_model_name(model_name, model_config, trained_mapper)
@@ -73,13 +70,17 @@ def inference(test_path: str, inference_config_path: str, saved_model_path: str,
     model, model_name = load_trained_model(saved_model_path)
     model: BaseModel
     mapper = model.mapper
-    predictor = predictors_factory(inference_config, mapper)
+    model_type = inference_config["model_type"]
+    predictor = predictors_factory(inference_config, mapper, model_type)
 
     # check if model is a model with sub word units
-    if "SubWords" in model_name:
-        dataset_name = "WindowWithSubWordsDataset"
+    if "window" in model_type:
+        if "SubWords" in model_name:
+            dataset_name = "WindowWithSubWordsDataset"
+        else:
+            dataset_name = "WindowDataset"
     else:
-        dataset_name = "WindowDataset"
+        dataset_name = "RegularLanguageDataset"
 
     # create dataset object and preform inference
     test_dataset = dataset_factory.get_from_dataset_name(dataset_name, test_path, mapper)

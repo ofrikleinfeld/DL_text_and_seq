@@ -6,7 +6,7 @@ import torch
 from torch.utils import data
 
 from models import BaseModel
-from configs import TrainingConfig, AcceptorConfig
+from configs import TrainingConfig, RNNConfig
 from predictors import BasePredictor
 
 

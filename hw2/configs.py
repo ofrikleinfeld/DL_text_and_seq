@@ -17,6 +17,9 @@ class BaseConfig(object):
     def add_key_value(self, key, value) -> None:
         self.config[key] = value
 
+    def __contains__(self, item):
+        return item in self.config
+
     def from_dict(self, parameters: dict):
         """Constructs a `Config` from a Python dictionary of parameters."""
         for key, value in parameters.items():
@@ -77,9 +80,9 @@ class WindowTaggerConfig(ModelConfig):
             self.config["window_size"] = window_size
 
 
-class AcceptorConfig(ModelConfig):
+class RNNConfig(ModelConfig):
 
-    def __init__(self, config_dict=None, embedding_dim: int = 59, hidden_dim: int = 150):
+    def __init__(self, config_dict=None, embedding_dim: int = 50, hidden_dim: int = 150):
         super().__init__(config_dict, embedding_dim)
         if config_dict is None:
             self.config["hidden_dim"] = hidden_dim
@@ -106,20 +109,6 @@ class TrainingConfig(BaseConfig):
             self.config["checkpoints_path"] = checkpoints_path
             self.config["checkpoint_step"] = checkpoint_step
             self.config["print_step"] = print_step
-
-
-class AcceptorTrainConfig(TrainingConfig):
-
-    def __init__(self, config_dict=None, model_type: str = "reg_lan_acceptor",
-                 batch_size: int = 16, num_workers: int = 12,
-                 device: str = "cpu", num_epochs: int = 30, learning_rate: float = 1e-4,
-                 checkpoints_path: str = "checkpoints", checkpoint_step: int = 10,
-                 print_step: int = 50, sequence_length: int = 65):
-        super().__init__(config_dict, model_type, batch_size, num_workers, device,
-                         num_epochs, learning_rate, checkpoints_path, checkpoint_step,
-                         print_step)
-        if config_dict is None:
-            self.config["sequence_length"] = sequence_length
 
 
 class InferenceConfig(BaseConfig):

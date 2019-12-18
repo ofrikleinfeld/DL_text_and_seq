@@ -9,6 +9,7 @@
 	"checkpoints_path": "experiments/ner_simple",
 	"min_frequency": 5,
 	"split_char" : "\t",
+	"window_size": 2,
 	"pre_trained_embeddings": "false",
 	"sub_word_units": "false",
 	"smart_unknown": "true"
