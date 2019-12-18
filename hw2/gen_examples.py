@@ -1,6 +1,7 @@
 import argparse
 import sys
 from typing import List
+from random import shuffle
 
 import rstr
 
@@ -19,7 +20,10 @@ def generate_examples(pattern: str, n: int) -> List[str]:
 def write_examples_to_file(examples: List[str], output_path: str, labels: List[int] = None) -> None:
     with open(output_path, "w") as f:
         if labels is not None:
-            for example, label in zip(examples, labels):
+            # shuffle examples
+            examples_with_labels = list(zip(examples, labels))
+            shuffle(examples_with_labels)
+            for example, label in examples_with_labels:
                 f.write(f"{example}\t{label}\n")
         else:
             for example in examples:
