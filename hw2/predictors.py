@@ -97,7 +97,7 @@ class AcceptorPredictor(BasePredictor):
 
     def infer_model_outputs(self, model_outputs: torch.tensor) -> List[int]:
         predictions = []
-        _, labels_tokens = torch.max(model_outputs)
+        _, labels_tokens = torch.max(model_outputs, dim=1)
 
         for i in range(len(model_outputs)):  # every sample in case of batch (even batch of size 1)
             current_prediction = labels_tokens[i].item()
