@@ -165,3 +165,8 @@ class TrainerFactory(object):
         if model_type == "acceptor":
             return AcceptorTrainer(model, train_config, predictor, loss_function)
 
+
+class LossFunctionFactory(object):
+    def __call__(self, model_type: str, mapper: BaseMapper = None) -> nn.Module:
+        return nn.CrossEntropyLoss()
+
