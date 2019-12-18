@@ -161,7 +161,7 @@ class AcceptorLSTM(BaseModel):
         self.labels_dim = mapper.get_labels_dim()
         self.padding_idx = mapper.get_padding_index()
         self.embedding_dim = config["embedding_dim"]
-        self.hidden_dim = config["hidden"]
+        self.hidden_dim = config["hidden_dim"]
         self.embedding = nn.Embedding(self.tokens_dim, self.embedding_dim, padding_idx=self.padding_idx)
         self.dropout = nn.Dropout(p=0.5)
         self.lstm = nn.LSTM(input_size=self.embedding_dim, hidden_size=self.hidden_dim,
