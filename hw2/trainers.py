@@ -150,6 +150,7 @@ class AcceptorTrainer(ModelTrainer):
         for epoch in range(start_epoch, num_epochs):
 
             model.train(mode=True)
+            epoch_start_time = time.time()
             running_batch_loss = 0
             running_batch_samples = 0
             epoch_train_loss = 0
@@ -173,7 +174,7 @@ class AcceptorTrainer(ModelTrainer):
                 running_batch_samples += len(outputs)
                 if batch_idx % print_batch_step == 0:
                     print_time = time.time()
-                    print("Train Epoch: {} [{}/{} ({:.0f}%)]\t Average Loss: {:.6f} Running for {} seconds".format(
+                    print("Train Epoch: {} [{}/{} ({:.0f}%)]\t Average Loss: {:.6f} Training began {} seconds ago".format(
                         epoch_num,
                         batch_idx * batch_size,
                         len(train_dataset),
@@ -183,41 +184,41 @@ class AcceptorTrainer(ModelTrainer):
                     running_batch_loss = 0
                     running_batch_samples = 0
 
-                # end of epoch - compute loss on dev set
-                end_of_epoch_time = time.time()
-                epoch_dev_loss = 0
-                model.eval()
-                total_predictions = 0
-                num_correct_predictions = 0
-                with torch.no_grad():
+            # end of epoch - compute loss on dev set
+            end_of_epoch_time = time.time()
+            epoch_dev_loss = 0
+            model.eval()
+            total_predictions = 0
+            num_correct_predictions = 0
+            with torch.no_grad():
 
-                    for batch_idx, sample in enumerate(dev_loader):
-                        x, y = sample
-                        x, y = x.to(device), y.to(device)
-                        outputs = model(x)
+                for batch_idx, sample in enumerate(dev_loader):
+                    x, y = sample
+                    x, y = x.to(device), y.to(device)
+                    outputs = model(x)
 
-                        # compute the loss of the batch
-                        loss = self.loss_function(outputs, y)
-                        epoch_dev_loss += loss.item() * len(x)  # sum of losses, so multiply with batch size
+                    # compute the loss of the batch
+                    loss = self.loss_function(outputs, y)
+                    epoch_dev_loss += loss.item() * len(x)  # sum of losses, so multiply with batch size
 
-                        # compute number of correct predictions for the batch
-                        num_correct_batch, total_predictions_batch = self.predictor.infer_model_outputs_with_gold_labels(outputs, y)
-                        num_correct_predictions += num_correct_batch
-                        total_predictions += total_predictions_batch
+                    # compute number of correct predictions for the batch
+                    num_correct_batch, total_predictions_batch = self.predictor.infer_model_outputs_with_gold_labels(outputs, y)
+                    num_correct_predictions += num_correct_batch
+                    total_predictions += total_predictions_batch
 
-                average_epoch_train_loss = epoch_train_loss / len(train_dataset)
-                average_epoch_dev_loss = epoch_dev_loss / len(dev_dataset)
-                epoch_dev_accuracy = num_correct_predictions / total_predictions
+            average_epoch_train_loss = epoch_train_loss / len(train_dataset)
+            average_epoch_dev_loss = epoch_dev_loss / len(dev_dataset)
+            epoch_dev_accuracy = num_correct_predictions / total_predictions
 
-                print("Epoch {} Loss on Train set is:\t{:.6f}".format(epoch_num, average_epoch_train_loss))
-                print("Epoch {} Loss on Dev set is:\t{:.6f}".format(epoch_num, average_epoch_dev_loss))
-                print("Epoch {} Accuracy on Dev set is:\t{:.6f}".format(epoch_num, epoch_dev_accuracy))
-                print("Epoch {} Number of seconds since the until end of epoch is :\t{}".format(
-                    epoch_num, int(train_start_time - end_of_epoch_time)
-                ))
+            print("Epoch {} Loss on Train set is:\t{:.6f}".format(epoch_num, average_epoch_train_loss))
+            print("Epoch {} Loss on Dev set is:\t{:.6f}".format(epoch_num, average_epoch_dev_loss))
+            print("Epoch {} Accuracy on Dev set is:\t{:.6f}".format(epoch_num, epoch_dev_accuracy))
+            print("Epoch {} (including prediction) took {} seconds".format(
+                epoch_num, int(end_of_epoch_time - epoch_start_time)
+            ))
 
-                # save checkpoint of the model if needed
-                if epoch_dev_accuracy > best_dev_accuracy:
-                    best_dev_accuracy = epoch_dev_accuracy
-                    print("Epoch {} Saving best model so far with accuracy of {:.6f} on Dev set".format(epoch_num, best_dev_accuracy))
-                    self.save_checkpoint(model_name)
+            # save checkpoint of the model if needed
+            if epoch_dev_accuracy > best_dev_accuracy:
+                best_dev_accuracy = epoch_dev_accuracy
+                print("Epoch {} Saving best model so far with accuracy of {:.6f} on Dev set".format(epoch_num, best_dev_accuracy))
+                self.save_checkpoint(model_name)
