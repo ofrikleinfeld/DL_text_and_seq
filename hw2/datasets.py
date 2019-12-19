@@ -238,7 +238,8 @@ class BiLSTMDataset(data.Dataset):
 
                 if line == "\n":  # empty line denotes end of a sentence
                     # update information about raw sentences lengths
-                    self._update_info_on_sequence_length(curr_sentence)
+                    if curr_sentence != ["-DOCSTART-"]:
+                        self._update_info_on_sequence_length(curr_sentence)
 
                     # now add padding
                     curr_sentence = self._prune_or_pad_sample(curr_sentence)
