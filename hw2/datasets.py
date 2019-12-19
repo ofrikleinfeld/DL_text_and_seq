@@ -167,7 +167,7 @@ class WindowWithSubWordsDataset(WindowDataset):
 
 class RegularLanguageDataset(data.Dataset):
 
-    def __init__(self, filepath: str, mapper: BaseMapper, sequence_length: int = 65):
+    def __init__(self, filepath: str, mapper: BaseMapperWithPadding, sequence_length: int = 65):
         self.filepath = filepath
         self.mapper = mapper
         self.sequence_length = sequence_length
@@ -192,7 +192,7 @@ class RegularLanguageDataset(data.Dataset):
 
         else:
             padding_length = self.sequence_length - sample_length
-            const_len_sample = sample + CHAR_PAD * padding_length
+            const_len_sample = sample + self.mapper.get_padding_symbol() * padding_length
 
         return const_len_sample
 
