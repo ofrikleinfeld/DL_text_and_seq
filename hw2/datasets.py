@@ -1,9 +1,9 @@
-from typing import  Tuple
+from typing import Tuple, List
 
 import torch
 import torch.utils.data as data
 
-from mappers import BaseMapper, TokenMapperWithSubWords, BEGIN, END, CHAR_PAD
+from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, BEGIN, END
 
 
 class WindowDataset(data.Dataset):
@@ -219,3 +219,45 @@ class RegularLanguageDataset(data.Dataset):
         y = torch.tensor(label_index)
 
         return x, y
+
+
+class BiLSTMDataset(data.Dataset):
+    def __init__(self, filepath: str, mapper: BaseMapperWithPadding, sequence_length: int = 65):
+        self.filepath = filepath
+        self.mapper = mapper
+        self.sequence_length = sequence_length
+        self.samples = []
+        self.labels = []
+
+    def _load_file(self) -> None:
+        with open(self.filepath, "r", encoding="utf8") as f:
+            curr_sentence = []
+            curr_labels = []
+            for line in f:
+
+                if line == "\n":  # empty line denotes end of a sentence
+                    curr_sentence = self._prune_or_pad_sample(curr_sentence)
+                    curr_labels = self._prune_or_pad_sample(curr_labels)
+
+                    self.samples.append(curr_sentence)
+                    self.labels.append(curr_labels)
+                    curr_sentence = []
+                    curr_labels = []
+
+                else:  # append word and label to current sentence
+                    word, label = line[:-1].split(self.mapper.split_char)
+                    curr_sentence.append(word)
+                    curr_labels.append(label)
+
+    def _prune_or_pad_sample(self, sample: List[str]) -> List[str]:
+        # padding or pruning
+        const_len_sample: List[str]
+        sample_length = len(sample)
+
+        if sample_length > self.sequence_length:
+            const_len_sample = sample[:self.sequence_length]
+        else:
+            padding_length = self.sequence_length - sample_length
+            const_len_sample = sample + [self.mapper.get_padding_symbol()] * padding_length
+
+        return const_len_sample
