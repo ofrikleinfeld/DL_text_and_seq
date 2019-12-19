@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import torch
 
-from mappers import BaseMapper
+from mappers import BaseMapper, BaseMapperWithPadding
 
 
 class BasePredictor(object):
@@ -104,3 +104,56 @@ class AcceptorPredictor(BasePredictor):
             predictions.append(current_prediction)
 
         return predictions
+
+
+class GreedyLSTMPredictor(BasePredictor):
+    def __init__(self, mapper: BaseMapperWithPadding):
+        super().__init__(mapper)
+
+    def infer_model_outputs(self, model_outputs: torch.tensor) -> List[List[int]]:
+        batch_predictions = []
+        single_sentence_prediction = []
+        batch_size, sequence_length = model_outputs.size()
+
+        _, labels_tokens = torch.max(model_outputs, dim=2)
+        for i in range(batch_size):  # number of samples in batch
+            for j in range(sequence_length):  # should be length of maximum sequence in dataset
+                current_prediction = labels_tokens[i][j].item()
+                single_sentence_prediction.append(current_prediction)
+
+            batch_predictions.append(single_sentence_prediction)
+            single_sentence_prediction = []
+
+        return batch_predictions
+
+    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> Tuple[int, int]:
+        num_correct = 0
+        num_predictions = 0
+        self.mapper: BaseMapperWithPadding
+        padding_index = self.mapper.get_padding_index()
+
+        batch_size, sequence_length = labels.size()
+        gold_labels = []
+        sequence_gold_labels = []
+        for i in range(batch_size):
+            for j in range(sequence_length):
+                label_index = labels[i][j].item()
+                if label_index != padding_index:
+                    sequence_gold_labels.append(label_index)
+
+            gold_labels.append(sequence_gold_labels)
+            sequence_gold_labels = []
+
+        predictions = self.infer_model_outputs(model_outputs)
+        for i in range(len(gold_labels)):
+            sequence_labels = gold_labels[i]
+            for j in range(len(sequence_labels)):
+                current_prediction = predictions[i][j]
+                current_label = sequence_labels[j]
+
+                if current_prediction == current_label:
+                    num_correct += 1
+
+                num_predictions += 1
+
+        return num_correct, num_predictions
