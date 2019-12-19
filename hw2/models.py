@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from configs import ModelConfig, WindowTaggerConfig, RNNConfig
-from mappers import BaseMapper, TokenMapperWithSubWords, RegularLanguageMapper
+from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords
 
 
 class BaseModel(nn.Module):
@@ -155,7 +155,7 @@ class WindowModelWithSubWords(ModelWithPreTrainedEmbeddings):
 
 
 class AcceptorLSTM(BaseModel):
-    def __init__(self, config: RNNConfig, mapper: RegularLanguageMapper):
+    def __init__(self, config: RNNConfig, mapper: BaseMapperWithPadding):
         super().__init__(config, mapper)
         self.tokens_dim = mapper.get_tokens_dim()
         self.labels_dim = mapper.get_labels_dim()
