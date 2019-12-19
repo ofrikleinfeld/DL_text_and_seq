@@ -255,7 +255,6 @@ class BiLSTMTrainer(ModelTrainer):
         for epoch in range(start_epoch, num_epochs):
 
             model.train(mode=True)
-            epoch_start_time = time.time()
             running_batch_loss = 0
             running_batch_samples = 0
             epoch_train_loss = 0
@@ -278,7 +277,6 @@ class BiLSTMTrainer(ModelTrainer):
                 running_batch_loss += loss.item() * len(outputs)
                 running_batch_samples += len(outputs)
                 if batch_idx % print_batch_step == 0:
-                    print_time = time.time()
                     print("Train Epoch: {} [{}/{} ({:.0f}%)]\t Average Loss: {:.6f}".format(
                         epoch_num,
                         batch_idx * batch_size,
@@ -289,12 +287,12 @@ class BiLSTMTrainer(ModelTrainer):
                     running_batch_loss = 0
                     running_batch_samples = 0
 
-                # print accuracy
-                _, dev_accuracy = self.predict_accuracy(model, device, dev_loader)
-                print("After {} sentences, accuracy on dev set is {:.6f}".format(batch_idx * batch_size, dev_accuracy))
+                    # print accuracy
+                    _, dev_accuracy = self.predict_accuracy(model, device, dev_loader)
+                    print("After {} sentences, accuracy on dev set is {:.6f}".format(batch_idx * batch_size, dev_accuracy))
 
-                # move model back to training mode
-                model.train(mode=True)
+                    # move model back to training mode
+                    model.train(mode=True)
 
             # end of epoch - compute loss on dev set
             average_epoch_dev_loss, epoch_dev_accuracy = self.predict_accuracy(model, device, dev_loader)
