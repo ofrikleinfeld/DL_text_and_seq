@@ -113,9 +113,9 @@ class GreedyLSTMPredictor(BasePredictor):
     def infer_model_outputs(self, model_outputs: torch.tensor) -> List[List[int]]:
         batch_predictions = []
         single_sentence_prediction = []
-        batch_size, sequence_length = model_outputs.size()
+        batch_size, num_features, sequence_length = model_outputs.size()
 
-        _, labels_tokens = torch.max(model_outputs, dim=2)
+        _, labels_tokens = torch.max(model_outputs, dim=1)
         for i in range(batch_size):  # number of samples in batch
             for j in range(sequence_length):  # should be length of maximum sequence in dataset
                 current_prediction = labels_tokens[i][j].item()
