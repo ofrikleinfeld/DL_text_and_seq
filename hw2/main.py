@@ -3,6 +3,8 @@ import sys
 from train_script import train
 from inference_script import inference
 
+SUPPORTED_MODELS = ["window_ner", "window_pos", "acceptor", "lstm_embeddings"]
+
 if __name__ == '__main__':
 
     # training and inference setting and parameters
@@ -13,7 +15,7 @@ if __name__ == '__main__':
     training_parser = subparsers.add_parser('training')
     training_parser.add_argument("--name", type=str, required=True, metavar='window_ner',
                                  help='unique name of the training procedure (used for checkpoint saving')
-    training_parser.add_argument("--model_type", type=str, required=True, choices=["window_ner", "window_pos", "acceptor"],
+    training_parser.add_argument("--model_type", type=str, required=True, choices=SUPPORTED_MODELS,
                                  help='unique name of the training procedure (used for checkpoint saving')
     training_parser.add_argument("--train_path", type=str, required=True,
                                  help="a path to training file")
