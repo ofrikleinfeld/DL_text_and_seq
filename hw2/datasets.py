@@ -228,6 +228,7 @@ class BiLSTMDataset(data.Dataset):
         self.sequence_length = sequence_length
         self.samples = []
         self.labels = []
+        self.lengths_hist = {}
 
     def _load_file(self) -> None:
         with open(self.filepath, "r", encoding="utf8") as f:
@@ -236,9 +237,14 @@ class BiLSTMDataset(data.Dataset):
             for line in f:
 
                 if line == "\n":  # empty line denotes end of a sentence
+                    # update information about raw sentences lengths
+                    self._update_info_on_sequence_length(curr_sentence)
+
+                    # now add padding
                     curr_sentence = self._prune_or_pad_sample(curr_sentence)
                     curr_labels = self._prune_or_pad_sample(curr_labels)
 
+                    # append to list of samples and continue to next sentence
                     self.samples.append(curr_sentence)
                     self.labels.append(curr_labels)
                     curr_sentence = []
@@ -285,3 +291,10 @@ class BiLSTMDataset(data.Dataset):
             const_len_sample = sample + [self.mapper.get_padding_symbol()] * padding_length
 
         return const_len_sample
+
+    def _update_info_on_sequence_length(self, sample: List[str]) -> None:
+        sequence_length = len(sample)
+        self.lengths_hist[sequence_length] = self.lengths_hist.get(sequence_length, 0)
+
+    def get_dataset_max_sequence_length(self):
+        return max(self.lengths_hist.keys())
