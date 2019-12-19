@@ -295,7 +295,7 @@ class BiLSTMDataset(data.Dataset):
 
     def _update_info_on_sequence_length(self, sample: List[str]) -> None:
         sequence_length = len(sample)
-        self.lengths_hist[sequence_length] = self.lengths_hist.get(sequence_length, 0)
+        self.lengths_hist[sequence_length] = self.lengths_hist.get(sequence_length, 0) + 1
 
     def get_dataset_max_sequence_length(self):
         return max(self.lengths_hist.keys())
