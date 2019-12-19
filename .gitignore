@@ -120,9 +120,10 @@ hw2/*.txt
 
 # ignore save checkpoints
 hw2/experiments/*
+hw2/acceptor_experiments/*
 
 # ignore pdf docx and xlsx files
 *.pdf
 *.docx
 *.xlsx
-
+*.pth
