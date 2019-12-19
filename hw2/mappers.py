@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 UNK = "UNK"
 CHAR_PAD = "*"
+WORD_PAD = "PADDDDDDDD"
 BEGIN = "<s>"
 END = "</s>"
 
@@ -411,3 +412,22 @@ class RegularLanguageMapper(BaseMapperWithPadding):
         return CHAR_PAD
 
 
+class TokenMapperUnkCategoryWithPadding(TokenMapperUnkCategory, BaseMapperWithPadding):
+    def __init__(self, min_frequency: int = 0, split_char="\t"):
+        super().__init__(min_frequency, split_char=split_char)
+
+    def _init_mappings(self) -> None:
+        # init mappings with padding_index
+        self.token_to_idx[WORD_PAD] = 0
+        self.idx_to_token[0] = WORD_PAD
+        self.label_to_idx[WORD_PAD] = 0
+        self.idx_to_label[0] = WORD_PAD
+
+        # continue with initiating unknown mappings
+        self._init_unknown_mappings()
+
+    def get_padding_index(self) -> int:
+        return self.get_token_idx(WORD_PAD)
+
+    def get_padding_symbol(self) -> str:
+        return WORD_PAD
