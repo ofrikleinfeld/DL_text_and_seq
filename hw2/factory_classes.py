@@ -6,7 +6,7 @@ from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory, TokenMapper
 from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor
 from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig
 from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset
-from trainers import ModelTrainer, AcceptorTrainer
+from trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
 
 
 class ConfigsFactory(object):
@@ -194,7 +194,7 @@ class TrainerFactory(object):
             return ModelTrainer(model, train_config, predictor, loss_function)
 
         if "lstm" in model_type:
-            return ModelTrainer(model, train_config, predictor, loss_function)
+            return BiLSTMTrainer(model, train_config, predictor, loss_function)
 
         if model_type == "acceptor":
             return AcceptorTrainer(model, train_config, predictor, loss_function)
