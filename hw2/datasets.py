@@ -249,6 +249,30 @@ class BiLSTMDataset(data.Dataset):
                     curr_sentence.append(word)
                     curr_labels.append(label)
 
+    def __len__(self) -> int:
+        # perform lazy evaluation of data loading
+        if len(self.samples) == 0:
+            self._load_file()
+
+        return len(self.samples)
+
+    def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
+        # lazy evaluation of data loading
+        if len(self.samples) == 0:
+            self._load_file()
+
+        # retrieve sample and transform from tokens to indices
+        sample = self.samples[item_idx]
+        labels = self.labels[item_idx]
+
+        sample_indices = [self.mapper.get_token_idx(word) for word in sample]
+        labels_indices = [self.mapper.get_label_idx(label) for label in labels]
+
+        x = torch.tensor(sample_indices)
+        y = torch.tensor(labels_indices)
+
+        return x, y
+
     def _prune_or_pad_sample(self, sample: List[str]) -> List[str]:
         # padding or pruning
         const_len_sample: List[str]
