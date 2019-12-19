@@ -191,14 +191,17 @@ class BasicBiLSTM(BaseModel):
         self.hidden_dim = config["hidden_dim"]
         self.embedding = nn.Embedding(self.tokens_dim, self.embedding_dim, padding_idx=self.padding_idx)
         self.LSTM = nn.LSTM(input_size=self.embedding_dim, hidden_size=self.hidden_dim,
-                            num_layers=2, bidirectional=True, dropout=0.5)
+                            num_layers=2, bidirectional=True, dropout=0.5, batch_first=True)
         self.linear = nn.Linear(in_features=self.hidden_dim * 2, out_features=self.labels_dim)
 
     def forward(self, x: torch.tensor) -> torch.tensor:
         x = self.embedding(x)
         rnn_features, _ = self.LSTM(x)
-        # RNN outputs has dimensions seq_length, batch, features (features is num_directions * hidden dim)
+        # RNN outputs has dimensions batch, sequence_length, features (features is num_directions * hidden dim)
 
-        rnn_features = rnn_features.permute(1, 0, 2)  # linear layer expects dimensions of batch, sequence, features
+        # rnn_features = rnn_features.permute(1, 0, 2)  # linear layer expects dimensions of batch, sequence, features
         y_hat = self.linear(rnn_features)
+
+        # Cross Entropy loss expects dimensions of type batch, features, sequence
+        y_hat = y_hat.permute(0, 2, 1)
         return y_hat
