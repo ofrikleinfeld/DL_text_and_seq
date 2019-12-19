@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch.utils.data as data
 
-from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM
-from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, RegularLanguageMapper
-from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor
+from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM
+from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding
+from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor
 from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig
-from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset
+from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset
 from trainers import ModelTrainer, AcceptorTrainer
 
 
@@ -22,6 +22,9 @@ class ConfigsFactory(object):
             return WindowTaggerConfig()
 
         if "acceptor" in config_type:
+            return RNNConfig()
+
+        if "lstm" in config_type:
             return RNNConfig()
 
 
@@ -44,6 +47,9 @@ class MappersFactory(object):
 
             return TokenMapper(min_frequency, split_char)
 
+        if "lstm" in mapper_name:
+            return TokenMapperUnkCategoryWithPadding(min_frequency, split_char)
+
         if mapper_name == "acceptor":
 
             return RegularLanguageMapper(min_frequency, split_char)
@@ -63,6 +69,9 @@ class MappersFactory(object):
         elif mapper_name == "RegularLanguageMapper":
             return RegularLanguageMapper()
 
+        elif mapper_name == "TokenMapperUnkCategoryWithPadding":
+            return TokenMapperUnkCategoryWithPadding()
+
         else:
             raise AttributeError("Wrong mapper name")
 
@@ -71,8 +80,8 @@ class ModelsFactory(object):
 
     def __call__(self, parameters_dict: BaseConfig, model_config: ModelConfig, mapper: BaseMapper, model_name: str) -> BaseModel:
 
-        # flags
         if "window" in model_name:
+            # flags
             model_config: WindowTaggerConfig
             sub_words_in_params = "sub_word_units" in parameters_dict
             pre_training_in_params = "pre_trained_embeddings" in parameters_dict
@@ -101,6 +110,11 @@ class ModelsFactory(object):
                                                            pre_trained_vocab_path="vocab.txt",
                                                            pre_trained_embedding_path="wordVectors.txt")
 
+        if "lstm" in model_name:
+            model_config: RNNConfig
+            mapper: BaseMapperWithPadding
+            return BasicBiLSTM(model_config, mapper)
+
         if model_name == "acceptor":
             model_config: RNNConfig
             mapper: RegularLanguageMapper
@@ -114,10 +128,14 @@ class ModelsFactory(object):
             return WindowTagger(model_config, mapper)
         elif model_name == "AcceptorLSTM":
             return AcceptorLSTM(model_config, mapper)
+        elif model_name == "BasicBiLSTM":
+            return BasicBiLSTM(model_config, mapper)
+        else:
+            raise AttributeError("Wrong model name")
 
 
 class PredictorsFactory(object):
-    def __call__(self, parameters_dict: BaseConfig, mapper, predictor_type: str) -> BasePredictor:
+    def __call__(self, parameters_dict: BaseConfig, mapper: BaseMapper, predictor_type: str) -> BasePredictor:
 
         if predictor_type == "window_ner":
             return WindowNERTaggerPredictor(mapper)
@@ -125,6 +143,9 @@ class PredictorsFactory(object):
             return WindowModelPredictor(mapper)
         elif predictor_type == "acceptor":
             return AcceptorPredictor(mapper)
+        elif "lstm" in predictor_type:
+            mapper: BaseMapperWithPadding
+            return GreedyLSTMPredictor(mapper)
 
 
 class DatasetsFactory(object):
@@ -142,7 +163,13 @@ class DatasetsFactory(object):
 
         if dataset_type == "acceptor":
             sequence_length = parameters_dict["sequence_length"]
+            mapper: BaseMapperWithPadding
             return RegularLanguageDataset(file_path, mapper, sequence_length)
+
+        if dataset_type == "lstm_embeddings":
+            sequence_length = parameters_dict["sequence_length"]
+            mapper: BaseMapperWithPadding
+            return BiLSTMDataset(file_path, mapper, sequence_length)
 
     def get_from_dataset_name(self, dataset_name, file_path, mapper, window_size=2, sequence_length=65):
 
@@ -152,6 +179,10 @@ class DatasetsFactory(object):
             return WindowDataset(file_path, mapper, window_size)
         elif dataset_name == "RegularLanguageDataset":
             return RegularLanguageDataset(file_path, mapper, sequence_length)
+        elif dataset_name == "BiLSTMDataset":
+            return BiLSTMDataset(file_path, mapper, sequence_length)
+        else:
+            raise AttributeError("Wrong dataset name")
 
 
 class TrainerFactory(object):
@@ -162,11 +193,27 @@ class TrainerFactory(object):
         if "window" in model_type:
             return ModelTrainer(model, train_config, predictor, loss_function)
 
+        if "lstm" in model_type:
+            return ModelTrainer(model, train_config, predictor, loss_function)
+
         if model_type == "acceptor":
             return AcceptorTrainer(model, train_config, predictor, loss_function)
 
 
 class LossFunctionFactory(object):
     def __call__(self, model_type: str, mapper: BaseMapper = None) -> nn.Module:
-        return nn.CrossEntropyLoss()
+
+        if "window" in model_type:
+            return nn.CrossEntropyLoss()
+
+        if model_type == "acceptor":
+            return nn.CrossEntropyLoss()
+
+        if "lstm" in model_type:
+            mapper: BaseMapperWithPadding
+            padding_symbol = mapper.get_padding_symbol()
+            label_padding_index = mapper.get_label_idx(padding_symbol)
+            return nn.CrossEntropyLoss(ignore_index=label_padding_index)
+
+
 
