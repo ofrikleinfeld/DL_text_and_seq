@@ -366,7 +366,7 @@ class TokenMapperWithSubWords(TokenMapperUnkCategory):
             self.index_to_suffix[index] = suffix
 
 
-class RegularLanguageMapper(BaseMapper):
+class RegularLanguageMapper(BaseMapperWithPadding):
 
     def __init__(self, min_frequency: int = 0, split_char: str = "\t"):
         super().__init__(min_frequency, split_char)
@@ -406,3 +406,8 @@ class RegularLanguageMapper(BaseMapper):
 
     def get_padding_index(self) -> int:
         return self.get_token_idx(CHAR_PAD)
+
+    def get_padding_symbol(self) -> str:
+        return CHAR_PAD
+
+
