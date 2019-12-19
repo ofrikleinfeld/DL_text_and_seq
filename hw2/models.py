@@ -179,3 +179,26 @@ class AcceptorLSTM(BaseModel):
 
         y_hat = self.linear(h_n)
         return y_hat
+
+
+class BasicBiLSTM(BaseModel):
+    def __init__(self, config: RNNConfig, mapper: BaseMapperWithPadding):
+        super().__init__(config, mapper)
+        self.tokens_dim = mapper.get_tokens_dim()
+        self.labels_dim = mapper.get_labels_dim()
+        self.padding_idx = mapper.get_padding_index()
+        self.embedding_dim = config["embedding_dim"]
+        self.hidden_dim = config["hidden_dim"]
+        self.embedding = nn.Embedding(self.tokens_dim, self.embedding_dim, padding_idx=self.padding_idx)
+        self.LSTM = nn.LSTM(input_size=self.embedding_dim, hidden_size=self.hidden_dim,
+                            num_layers=2, bidirectional=True, dropout=0.5)
+        self.linear = nn.Linear(in_features=self.hidden_dim * 2, out_features=self.labels_dim)
+
+    def forward(self, x: torch.tensor) -> torch.tensor:
+        x = self.embedding(x)
+        rnn_features, _ = self.LSTM(x)
+        # RNN outputs has dimensions seq_length, batch, features (features is num_directions * hidden dim)
+
+        rnn_features = rnn_features.permute(1, 0, 2)  # linear layer expects dimensions of batch, sequence, features
+        y_hat = self.linear(rnn_features)
+        return y_hat
