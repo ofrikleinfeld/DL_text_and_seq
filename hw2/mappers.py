@@ -61,6 +61,15 @@ class BaseMapper(object):
         return self.idx_to_label[index]
 
 
+class BaseMapperWithPadding(BaseMapper):
+
+    def get_padding_index(self) -> int:
+        raise NotImplementedError("Mapper with padding needs to implement get padding index")
+
+    def get_padding_symbol(self) -> str:
+        raise NotImplementedError("Mapper with padding needs to implement get padding symbol")
+
+
 class TokenMapper(BaseMapper):
     """
     Class for mapping discrete tokens in a training set
