@@ -232,7 +232,8 @@ class BiLSTMTrainer(ModelTrainer):
 
     def train(self, model_name: str, train_dataset: data.Dataset, dev_dataset: data.Dataset) -> None:
         # training hyper parameters and configuration
-        batch_size = self.train_config["batch_size"]
+        train_batch_size = self.train_config["batch_size"]
+        dev_batch_size = train_batch_size * 40
         num_workers = self.train_config["num_workers"]
         num_epochs = self.train_config["num_epochs"]
         learning_rate = self.train_config["learning_rate"]
@@ -244,9 +245,10 @@ class BiLSTMTrainer(ModelTrainer):
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
         # create data loaders
-        train_config_dict = {"batch_size": batch_size, "num_workers": num_workers}
+        train_config_dict = {"batch_size": train_batch_size, "num_workers": num_workers}
+        dev_config_dict = {"batch_size": dev_batch_size, "num_workers": num_workers}
         training_loader = data.DataLoader(train_dataset, **train_config_dict)
-        dev_loader = data.DataLoader(dev_dataset, **train_config_dict)
+        dev_loader = data.DataLoader(dev_dataset, **dev_config_dict)
 
         # Start training
         model = model.to(device)
@@ -279,7 +281,7 @@ class BiLSTMTrainer(ModelTrainer):
                 if batch_idx % print_batch_step == 0:
                     print("Train Epoch: {} [{}/{} ({:.0f}%)]\t Average Loss: {:.6f}".format(
                         epoch_num,
-                        batch_idx * batch_size,
+                        batch_idx * train_batch_size,
                         len(train_dataset),
                         100. * batch_idx / len(training_loader),
                         running_batch_loss / running_batch_samples,
@@ -289,7 +291,7 @@ class BiLSTMTrainer(ModelTrainer):
 
                     # print accuracy
                     _, dev_accuracy = self.predict_accuracy(model, device, dev_loader)
-                    print("After {} sentences, accuracy on dev set is {:.6f}".format(batch_idx * batch_size, dev_accuracy))
+                    print("After {} sentences, accuracy on dev set is {:.6f}".format(batch_idx * train_batch_size, dev_accuracy))
 
                     # move model back to training mode
                     model.train(mode=True)

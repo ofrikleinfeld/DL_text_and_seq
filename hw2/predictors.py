@@ -110,50 +110,30 @@ class GreedyLSTMPredictor(BasePredictor):
     def __init__(self, mapper: BaseMapperWithPadding):
         super().__init__(mapper)
 
-    def infer_model_outputs(self, model_outputs: torch.tensor) -> List[List[int]]:
-        batch_predictions = []
-        single_sentence_prediction = []
-        batch_size, num_features, sequence_length = model_outputs.size()
-
+    def infer_model_outputs(self, model_outputs: torch.tensor) -> torch.Tensor:
+        # dimension of model outputs is batch_size, num_features, sequence_length
+        # that is why we are using max on dimension 1 - the features dimension
         _, labels_tokens = torch.max(model_outputs, dim=1)
-        for i in range(batch_size):  # number of samples in batch
-            for j in range(sequence_length):  # should be length of maximum sequence in dataset
-                current_prediction = labels_tokens[i][j].item()
-                single_sentence_prediction.append(current_prediction)
-
-            batch_predictions.append(single_sentence_prediction)
-            single_sentence_prediction = []
-
-        return batch_predictions
+        return labels_tokens
 
     def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> Tuple[int, int]:
-        num_correct = 0
-        num_predictions = 0
+        num_correct: int
+        num_predictions: int
+
         self.mapper: BaseMapperWithPadding
-        padding_index = self.mapper.get_padding_index()
+        padding_symbol = self.mapper.get_padding_symbol()
+        label_padding_index = self.mapper.get_label_idx(padding_symbol)
 
-        batch_size, sequence_length = labels.size()
-        gold_labels = []
-        sequence_gold_labels = []
-        for i in range(batch_size):
-            for j in range(sequence_length):
-                label_index = labels[i][j].item()
-                if label_index != padding_index:
-                    sequence_gold_labels.append(label_index)
+        # create a mask to distinguish padding from real tokens
+        padding_mask = (labels != label_padding_index).type(torch.int64)
+        num_predictions = torch.sum(padding_mask).item()
 
-            gold_labels.append(sequence_gold_labels)
-            sequence_gold_labels = []
-
+        # compute prediction (greedy, argmax in each time sequence)
         predictions = self.infer_model_outputs(model_outputs)
-        for i in range(len(gold_labels)):
-            sequence_labels = gold_labels[i]
-            for j in range(len(sequence_labels)):
-                current_prediction = predictions[i][j]
-                current_label = sequence_labels[j]
 
-                if current_prediction == current_label:
-                    num_correct += 1
-
-                num_predictions += 1
+        # compare between predictions and labels, masking out padding
+        correct_predictions_raw = (predictions == labels).type(torch.int64)
+        correct_prediction_no_padding = correct_predictions_raw * padding_mask
+        num_correct = torch.sum(correct_prediction_no_padding).item()
 
         return num_correct, num_predictions
