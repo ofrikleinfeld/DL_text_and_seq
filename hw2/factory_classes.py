@@ -29,56 +29,38 @@ class ConfigsFactory(object):
 
 
 class MappersFactory(object):
-    def __call__(self, parameters_dict: BaseConfig, mapper_name: str) -> BaseMapper:
+    def __call__(self, config: BaseConfig, mapper_name: str) -> BaseMapper:
 
         # mapper_attributes
-        min_frequency = parameters_dict["min_frequency"]
-        split_char = parameters_dict["split_char"]
+        if "min_frequency" in config:
+            min_frequency = config["min_frequency"]
+        else:
+            min_frequency = 0
+
+        if "split_char" in config:
+            split_char = config["split_char"]
+        else:
+            split_char = "\t"
 
         if "window" in mapper_name:
 
-            # check if flags exists
-            if "smart_unknown" in parameters_dict:
-                return TokenMapperUnkCategory(min_frequency, split_char)
-
-            if "sub_word_units" in parameters_dict:
+            if "sub_words" in mapper_name:
                 return TokenMapperWithSubWords(min_frequency, split_char)
 
-            return TokenMapper(min_frequency, split_char)
+            else:
+                return TokenMapperUnkCategory(min_frequency, split_char)
 
         if "lstm" in mapper_name:
+
             if "sub_words" in mapper_name:
                 return TokenMapperWithSubWordsWithPadding(min_frequency, split_char)
+
             else:
                 return TokenMapperUnkCategoryWithPadding(min_frequency, split_char)
 
         if mapper_name == "acceptor":
 
             return RegularLanguageMapper(min_frequency, split_char)
-
-    def get_from_mapper_name(self, mapper_name):
-
-        if mapper_name == "TokenMapperWithSubWords":
-            return TokenMapperWithSubWords()
-
-        elif mapper_name == "TokenMapperUnkCategory":
-
-            return TokenMapperUnkCategory()
-
-        elif mapper_name == "TokenMapper":
-            return TokenMapper()
-
-        elif mapper_name == "RegularLanguageMapper":
-            return RegularLanguageMapper()
-
-        elif mapper_name == "TokenMapperUnkCategoryWithPadding":
-            return TokenMapperUnkCategoryWithPadding()
-
-        elif mapper_name == "TokenMapperWithSubWordsWithPadding":
-            return TokenMapperWithSubWordsWithPadding()
-
-        else:
-            raise AttributeError("Wrong mapper name")
 
 
 class ModelsFactory(object):
@@ -88,39 +70,41 @@ class ModelsFactory(object):
         if "window" in model_name:
             # flags
             model_config: WindowTaggerConfig
-            sub_words_in_params = "sub_word_units" in parameters_dict
-            pre_training_in_params = "pre_trained_embeddings" in parameters_dict
+            with_sub_words = "sub_words" in model_name
+            with_pre_training = "pre_trained" in model_name
 
             # both exists
-            if sub_words_in_params and pre_training_in_params:
+            if with_sub_words and with_pre_training:
                 mapper: TokenMapperWithSubWords
                 return WindowModelWithSubWords(model_config, mapper, pre_trained=True,
                                                pre_trained_vocab_path="vocab.txt",
                                                pre_trained_embedding_path="wordVectors.txt")
             # none of them exists
-            if not sub_words_in_params and not pre_training_in_params:
+            if not with_sub_words and not with_pre_training:
                 model_config: WindowTaggerConfig
                 return WindowTagger(model_config, mapper)
 
             # just sub words exists
-            if sub_words_in_params and not pre_training_in_params:
+            if with_sub_words and not with_pre_training:
                 mapper: TokenMapperWithSubWords
                 return WindowModelWithSubWords(model_config, mapper, pre_trained=False,
                                                pre_trained_vocab_path="vocab.txt",
                                                pre_trained_embedding_path="wordVectors.txt")
 
             # just pre training exists
-            if not sub_words_in_params and pre_training_in_params:
+            if not with_sub_words and with_pre_training:
                 return WindowModelWithPreTrainedEmbeddings(model_config, mapper,
                                                            pre_trained_vocab_path="vocab.txt",
                                                            pre_trained_embedding_path="wordVectors.txt")
 
         if "lstm" in model_name:
             model_config: RNNConfig
+            with_sub_words = "sub_words" in model_name
 
-            if "sub_words" in model_name:
+            if with_sub_words:
                 mapper: TokenMapperWithSubWordsWithPadding
                 return BiLSTMWithSubWords(model_config, mapper)
+
             else:
                 mapper: BaseMapperWithPadding
                 return BasicBiLSTM(model_config, mapper)
@@ -130,38 +114,16 @@ class ModelsFactory(object):
             mapper: RegularLanguageMapper
             return AcceptorLSTM(model_config, mapper)
 
-    def get_from_model_name(self, model_name, model_config, mapper):
-
-        if model_name == "WindowModelWithSubWords":
-            return WindowModelWithSubWords(model_config, mapper)
-
-        elif model_name == "WindowTagger":
-            return WindowTagger(model_config, mapper)
-
-        elif model_name == "AcceptorLSTM":
-            return AcceptorLSTM(model_config, mapper)
-
-        elif model_name == "BasicBiLSTM":
-            return BasicBiLSTM(model_config, mapper)
-
-        elif model_name == "BiLSTMWithSubWords":
-            return BiLSTMWithSubWords(model_config, mapper)
-
-        else:
-            raise AttributeError("Wrong model name")
-
 
 class PredictorsFactory(object):
     def __call__(self, parameters_dict: BaseConfig, mapper: BaseMapper, predictor_type: str) -> BasePredictor:
 
-        if predictor_type == "window_ner":
-            return WindowNERTaggerPredictor(mapper)
+        if "window" in predictor_type:
+            if "_ner" in predictor_type:
+                return WindowNERTaggerPredictor(mapper)
 
-        elif predictor_type == "window_pos":
-            return WindowModelPredictor(mapper)
-
-        elif predictor_type == "acceptor":
-            return AcceptorPredictor(mapper)
+            if "pos_" in predictor_type:
+                return WindowModelPredictor(mapper)
 
         elif "lstm" in predictor_type:
             mapper: BaseMapperWithPadding
@@ -172,14 +134,21 @@ class PredictorsFactory(object):
             if "_pos" in predictor_type:
                 return GreedyLSTMPredictor(mapper)
 
+        elif predictor_type == "acceptor":
+            return AcceptorPredictor(mapper)
+
 
 class DatasetsFactory(object):
-    def __call__(self, parameters_dict: BaseConfig, file_path: str, mapper: BaseMapper, dataset_type: str) -> data.Dataset:
+    def __call__(self, config: BaseConfig, file_path: str, mapper: BaseMapper, dataset_type: str) -> data.Dataset:
 
         if "window" in dataset_type:
-            window_size = parameters_dict["window_size"]
-            # flags
-            if "sub_word_units" in parameters_dict:
+
+            if "window_size" in config:
+                window_size = config["window_size"]
+            else:
+                window_size = 2  # default value
+
+            if "sub_words" in dataset_type:
                 mapper: TokenMapperWithSubWords
                 return WindowWithSubWordsDataset(file_path, mapper, window_size)
 
@@ -187,7 +156,12 @@ class DatasetsFactory(object):
                 return WindowDataset(file_path, mapper, window_size)
 
         if "lstm" in dataset_type:
-            sequence_length = parameters_dict["sequence_length"]
+
+            if "sequence_length" in config:
+                sequence_length = config["sequence_length"]
+            else:
+                sequence_length = 50  # default value
+
             if "sub_words" in dataset_type:
                 mapper: TokenMapperWithSubWordsWithPadding
                 return BiLSTMWithSubWordsDataset(file_path, mapper, sequence_length)
@@ -197,30 +171,14 @@ class DatasetsFactory(object):
                 return BiLSTMDataset(file_path, mapper, sequence_length)
 
         if dataset_type == "acceptor":
-            sequence_length = parameters_dict["sequence_length"]
+
+            if "sequence_length" in config:
+                sequence_length = config["sequence_length"]
+            else:
+                sequence_length = 65  # default value
+
             mapper: BaseMapperWithPadding
             return RegularLanguageDataset(file_path, mapper, sequence_length)
-
-    def get_from_dataset_name(self, dataset_name, file_path, mapper, window_size=2, sequence_length=65):
-
-        if dataset_name == "WindowWithSubWordsDataset":
-            return WindowWithSubWordsDataset(file_path, mapper, window_size)
-
-        elif dataset_name == "WindowDataset":
-
-            return WindowDataset(file_path, mapper, window_size)
-
-        elif dataset_name == "RegularLanguageDataset":
-            return RegularLanguageDataset(file_path, mapper, sequence_length)
-
-        elif dataset_name == "BiLSTMDataset":
-            return BiLSTMDataset(file_path, mapper, sequence_length)
-
-        elif dataset_name == "BiLSTMWithSubWordsDataset":
-            return BiLSTMWithSubWordsDataset(file_path, mapper, sequence_length)
-
-        else:
-            raise AttributeError("Wrong dataset name")
 
 
 class TrainerFactory(object):
@@ -244,14 +202,12 @@ class LossFunctionFactory(object):
         if "window" in model_type:
             return nn.CrossEntropyLoss()
 
-        if model_type == "acceptor":
-            return nn.CrossEntropyLoss()
-
         if "lstm" in model_type:
             mapper: BaseMapperWithPadding
             padding_symbol = mapper.get_padding_symbol()
             label_padding_index = mapper.get_label_idx(padding_symbol)
             return nn.CrossEntropyLoss(ignore_index=label_padding_index)
 
-
+        if model_type == "acceptor":
+            return nn.CrossEntropyLoss()
 
