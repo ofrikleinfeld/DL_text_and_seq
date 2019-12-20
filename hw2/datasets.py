@@ -142,11 +142,12 @@ class WindowWithSubWordsDataset(WindowDataset):
             self._load_file()
 
         # retrieve sample and transform from tokens to indices
+        self.mapper: TokenMapperWithSubWords
         sample = self.samples[item_idx]
-        prefixs = self.prefixes[item_idx]
+        prefixes = self.prefixes[item_idx]
         suffixes = self.suffixes[item_idx]
         sample_indices = [self.mapper.get_token_idx(word) for word in sample]
-        prefixes_indices = [self.mapper.get_prefix_index(prefix) for prefix in prefixs]
+        prefixes_indices = [self.mapper.get_prefix_index(prefix) for prefix in prefixes]
         suffixes_indices = [self.mapper.get_suffix_index(suffix) for suffix in suffixes]
 
         sample_indices = torch.tensor(sample_indices)
@@ -242,19 +243,28 @@ class BiLSTMDataset(data.Dataset):
                         self._update_info_on_sequence_length(curr_sentence)
 
                     # now add padding
-                    curr_sentence = self._prune_or_pad_sample(curr_sentence)
-                    curr_labels = self._prune_or_pad_sample(curr_labels)
+                    if len(curr_labels) > 0:
+                        # append to list of labels
+                        curr_labels = self._prune_or_pad_sample(curr_labels)
+                        self.labels.append(curr_labels)
+                        curr_labels = []
 
-                    # append to list of samples and continue to next sentence
+                    # anyway append to list of samples and continue to next sentence
+                    curr_sentence = self._prune_or_pad_sample(curr_sentence)
                     self.samples.append(curr_sentence)
-                    self.labels.append(curr_labels)
                     curr_sentence = []
-                    curr_labels = []
 
                 else:  # append word and label to current sentence
-                    word, label = line[:-1].split(self.mapper.split_char)
+                    tokens = line[:-1].split(self.mapper.split_char)
+
+                    # check that indeed we have a label and it is not a blind test set
+                    if len(tokens) == 2:
+                        label = tokens[1]
+                        curr_labels.append(label)
+
+                    # any way we will have words to predict
+                    word = tokens[0]
                     curr_sentence.append(word)
-                    curr_labels.append(label)
 
     def __len__(self) -> int:
         # perform lazy evaluation of data loading
@@ -268,15 +278,18 @@ class BiLSTMDataset(data.Dataset):
         if len(self.samples) == 0:
             self._load_file()
 
-        # retrieve sample and transform from tokens to indices
+        # check if we have labels or it is a blind test set
+        if len(self.labels) > 0:
+            labels = self.labels[item_idx]
+            labels_indices = [self.mapper.get_label_idx(label) for label in labels]
+            y = torch.tensor(labels_indices)
+        else:
+            y = torch.tensor([])
+
+        # even for test set we anyway have samples to predict
         sample = self.samples[item_idx]
-        labels = self.labels[item_idx]
-
         sample_indices = [self.mapper.get_token_idx(word) for word in sample]
-        labels_indices = [self.mapper.get_label_idx(label) for label in labels]
-
         x = torch.tensor(sample_indices)
-        y = torch.tensor(labels_indices)
 
         return x, y
 
