@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from configs import ModelConfig, WindowTaggerConfig, RNNConfig
-from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords
+from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding
 
 
 class BaseModel(nn.Module):
@@ -199,7 +199,49 @@ class BasicBiLSTM(BaseModel):
         rnn_features, _ = self.LSTM(x)
         # RNN outputs has dimensions batch, sequence_length, features (features is num_directions * hidden dim)
 
-        # rnn_features = rnn_features.permute(1, 0, 2)  # linear layer expects dimensions of batch, sequence, features
+        y_hat = self.linear(rnn_features)
+
+        # Cross Entropy loss expects dimensions of type batch, features, sequence
+        y_hat = y_hat.permute(0, 2, 1)
+        return y_hat
+
+
+class BiLSTMWithSubWords(BaseModel):
+
+    def __init__(self, config: RNNConfig, mapper: TokenMapperWithSubWordsWithPadding):
+        super().__init__(config, mapper)
+        self.tokens_dim = mapper.get_tokens_dim()
+        self.labels_dim = mapper.get_labels_dim()
+        self.prefix_dim = mapper.get_prefix_dim()
+        self.suffix_dim = mapper.get_suffix_dim()
+        self.padding_idx = mapper.get_padding_index()
+        self.embedding_dim = config["embedding_dim"]
+        self.hidden_dim = config["hidden_dim"]
+
+        self.word_embedding = nn.Embedding(self.tokens_dim, self.embedding_dim, padding_idx=self.padding_idx)
+        self.prefix_embedding = nn.Embedding(self.prefix_dim, self.embedding_dim, padding_idx=self.padding_idx)
+        self.suffix_embedding = nn.Embedding(self.suffix_dim, self.embedding_dim, padding_idx=self.padding_idx)
+
+        self.LSTM = nn.LSTM(input_size=self.embedding_dim, hidden_size=self.hidden_dim,
+                            num_layers=2, bidirectional=True, dropout=0.5, batch_first=True)
+        self.linear = nn.Linear(in_features=self.hidden_dim * 2, out_features=self.labels_dim)
+
+    def forward(self, x: torch.tensor) -> torch.tensor:
+
+        words_tokens = x[:, 0, :]
+        prefix_tokens = x[:, 1, :]
+        suffix_tokens = x[:, 2, :]
+
+        word_embeddings = self.word_embedding(words_tokens)
+        prefix_embeddings = self.prefix_embedding(prefix_tokens)
+        suffix_embeddings = self.suffix_embedding(suffix_tokens)
+
+        embeddings_sum = word_embeddings + prefix_embeddings + suffix_embeddings
+        # embedding = torch.flatten(embeddings_sum, start_dim=1)
+
+        rnn_features, _ = self.LSTM(embeddings_sum)
+        # RNN outputs has dimensions batch, sequence_length, features (features is num_directions * hidden dim)
+
         y_hat = self.linear(rnn_features)
 
         # Cross Entropy loss expects dimensions of type batch, features, sequence

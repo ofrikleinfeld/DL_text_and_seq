@@ -3,7 +3,7 @@ import sys
 from train_script import train
 from inference_script import inference
 
-SUPPORTED_MODELS = ["window_ner", "window_pos", "acceptor", "lstm_embeddings_ner", "lstm_embeddings_pos"]
+SUPPORTED_MODELS = ["window_ner", "window_pos", "acceptor", "lstm_embeddings_ner", "lstm_embeddings_pos", "lstm_sub_words_ner", "lstm_sub_words_pos"]
 
 if __name__ == '__main__':
 

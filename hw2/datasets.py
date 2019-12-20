@@ -3,7 +3,7 @@ from typing import Tuple, List
 import torch
 import torch.utils.data as data
 
-from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, BEGIN, END
+from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, BEGIN, END
 
 
 class WindowDataset(data.Dataset):
@@ -312,3 +312,86 @@ class BiLSTMDataset(data.Dataset):
 
     def get_dataset_max_sequence_length(self):
         return max(self.lengths_hist.keys())
+
+
+class BiLSTMWithSubWordsDataset(BiLSTMDataset):
+
+    def __init__(self, filepath: str, mapper: TokenMapperWithSubWordsWithPadding, sequence_length: int = 65):
+        super().__init__(filepath, mapper, sequence_length)
+        self.prefixes = []
+        self.suffixes = []
+
+    def _load_file(self) -> None:
+        with open(self.filepath, "r", encoding="utf8") as f:
+            curr_sentence = []
+            curr_prefixes = []
+            curr_suffixes = []
+            curr_labels = []
+
+            for line in f:
+
+                if line == "\n":  # empty line denotes end of a sentence
+
+                    # add padding
+                    if len(curr_labels) > 0:
+                        curr_labels = self._prune_or_pad_sample(curr_labels)
+                        self.labels.append(curr_labels)
+                        curr_labels = []
+
+                    # anyway add padding to word prefix and suffix tokens
+                    curr_sentence = self._prune_or_pad_sample(curr_sentence)
+                    curr_prefixes = self._prune_or_pad_sample(curr_prefixes)
+                    curr_suffixes = self._prune_or_pad_sample(curr_suffixes)
+
+                    # append to list of samples and continue to next sentence
+                    self.samples.append(curr_sentence)
+                    self.prefixes.append(curr_prefixes)
+                    self.suffixes.append(curr_suffixes)
+                    curr_sentence = []
+                    curr_prefixes = []
+                    curr_suffixes = []
+
+                else:
+                    # append word, prefix, suffix, and label to current sentence
+                    tokens = line[:-1].split(self.mapper.split_char)
+                    if len(tokens) == 2:
+                        # we also have labels
+                        label = tokens[1]
+                        curr_labels.append(label)
+
+                    # anyway we have word token to predict
+                    word = tokens[0]
+                    prefix = word[:3]
+                    suffix = word[-3:]
+                    curr_sentence.append(word)
+                    curr_prefixes.append(prefix)
+                    curr_suffixes.append(suffix)
+
+    def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
+        if len(self.samples) == 0:
+            self._load_file()
+
+        # retrieve sample and transform from tokens to indices
+        self.mapper: TokenMapperWithSubWordsWithPadding
+        sample = self.samples[item_idx]
+        prefixes = self.prefixes[item_idx]
+        suffixes = self.suffixes[item_idx]
+
+        sample_indices = [self.mapper.get_token_idx(word) for word in sample]
+        prefixes_indices = [self.mapper.get_prefix_index(prefix) for prefix in prefixes]
+        suffixes_indices = [self.mapper.get_suffix_index(suffix) for suffix in suffixes]
+
+        sample_indices = torch.tensor(sample_indices)
+        prefixes_indices = torch.tensor(prefixes_indices)
+        suffixes_indices = torch.tensor(suffixes_indices)
+        x = torch.stack([sample_indices, prefixes_indices, suffixes_indices])
+
+        # verify if it a train/dev dataset of a test dataset
+        if len(self.labels) > 0:  # we have labels
+            labels = self.labels[item_idx]
+            labels_indices = [self.mapper.get_label_idx(label) for label in labels]
+            y = torch.tensor(labels_indices)
+        else:
+            y = torch.tensor([])
+
+        return x, y

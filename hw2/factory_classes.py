@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch.utils.data as data
 
-from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM
-from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding
+from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM, BiLSTMWithSubWords
+from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding, TokenMapperWithSubWordsWithPadding
 from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor, GreedyLSTMPredictorForNER
 from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig
-from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset
+from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset
 from trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
 
 
@@ -37,7 +37,6 @@ class MappersFactory(object):
 
         if "window" in mapper_name:
 
-            # flags
             # check if flags exists
             if "smart_unknown" in parameters_dict:
                 return TokenMapperUnkCategory(min_frequency, split_char)
@@ -48,7 +47,10 @@ class MappersFactory(object):
             return TokenMapper(min_frequency, split_char)
 
         if "lstm" in mapper_name:
-            return TokenMapperUnkCategoryWithPadding(min_frequency, split_char)
+            if "sub_words" in mapper_name:
+                return TokenMapperWithSubWordsWithPadding(min_frequency, split_char)
+            else:
+                return TokenMapperUnkCategoryWithPadding(min_frequency, split_char)
 
         if mapper_name == "acceptor":
 
@@ -71,6 +73,9 @@ class MappersFactory(object):
 
         elif mapper_name == "TokenMapperUnkCategoryWithPadding":
             return TokenMapperUnkCategoryWithPadding()
+
+        elif mapper_name == "TokenMapperWithSubWordsWithPadding":
+            return TokenMapperWithSubWordsWithPadding()
 
         else:
             raise AttributeError("Wrong mapper name")
@@ -112,8 +117,13 @@ class ModelsFactory(object):
 
         if "lstm" in model_name:
             model_config: RNNConfig
-            mapper: BaseMapperWithPadding
-            return BasicBiLSTM(model_config, mapper)
+
+            if "sub_words" in model_name:
+                mapper: TokenMapperWithSubWordsWithPadding
+                return BiLSTMWithSubWords(model_config, mapper)
+            else:
+                mapper: BaseMapperWithPadding
+                return BasicBiLSTM(model_config, mapper)
 
         if model_name == "acceptor":
             model_config: RNNConfig
@@ -124,12 +134,19 @@ class ModelsFactory(object):
 
         if model_name == "WindowModelWithSubWords":
             return WindowModelWithSubWords(model_config, mapper)
+
         elif model_name == "WindowTagger":
             return WindowTagger(model_config, mapper)
+
         elif model_name == "AcceptorLSTM":
             return AcceptorLSTM(model_config, mapper)
+
         elif model_name == "BasicBiLSTM":
             return BasicBiLSTM(model_config, mapper)
+
+        elif model_name == "BiLSTMWithSubWords":
+            return BiLSTMWithSubWords(model_config, mapper)
+
         else:
             raise AttributeError("Wrong model name")
 
@@ -171,8 +188,13 @@ class DatasetsFactory(object):
 
         if "lstm" in dataset_type:
             sequence_length = parameters_dict["sequence_length"]
-            mapper: BaseMapperWithPadding
-            return BiLSTMDataset(file_path, mapper, sequence_length)
+            if "sub_words" in dataset_type:
+                mapper: TokenMapperWithSubWordsWithPadding
+                return BiLSTMWithSubWordsDataset(file_path, mapper, sequence_length)
+
+            else:
+                mapper: BaseMapperWithPadding
+                return BiLSTMDataset(file_path, mapper, sequence_length)
 
         if dataset_type == "acceptor":
             sequence_length = parameters_dict["sequence_length"]
@@ -183,12 +205,20 @@ class DatasetsFactory(object):
 
         if dataset_name == "WindowWithSubWordsDataset":
             return WindowWithSubWordsDataset(file_path, mapper, window_size)
+
         elif dataset_name == "WindowDataset":
+
             return WindowDataset(file_path, mapper, window_size)
+
         elif dataset_name == "RegularLanguageDataset":
             return RegularLanguageDataset(file_path, mapper, sequence_length)
+
         elif dataset_name == "BiLSTMDataset":
             return BiLSTMDataset(file_path, mapper, sequence_length)
+
+        elif dataset_name == "BiLSTMWithSubWordsDataset":
+            return BiLSTMWithSubWordsDataset(file_path, mapper, sequence_length)
+
         else:
             raise AttributeError("Wrong dataset name")
 

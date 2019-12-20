@@ -431,3 +431,36 @@ class TokenMapperUnkCategoryWithPadding(TokenMapperUnkCategory, BaseMapperWithPa
 
     def get_padding_symbol(self) -> str:
         return WORD_PAD
+
+
+class TokenMapperWithSubWordsWithPadding(TokenMapperWithSubWords, BaseMapperWithPadding):
+
+    def __init__(self, min_frequency: int = 0, split_char="\t"):
+        super().__init__(min_frequency, split_char)
+
+    def _init_mappings(self) -> None:
+
+        # init mappings with padding_index
+        self.token_to_idx[WORD_PAD] = len(self.token_to_idx)
+        self.label_to_idx[WORD_PAD] = len(self.label_to_idx)
+        self.prefix_to_index[WORD_PAD] = len(self.prefix_to_index)
+        self.suffix_to_index[WORD_PAD] = len(self.suffix_to_index)
+
+        # add unknown tokens for sub words
+        self.prefix_to_index[self.UNK_PREFIX] = len(self.prefix_to_index)
+        self.suffix_to_index[self.UNK_SUFFIX] = len(self.suffix_to_index)
+
+        # update the index -> token dictionaries
+        self.idx_to_token = {idx: token for token, idx in self.token_to_idx.items()}
+        self.idx_to_label = {idx: label for label, idx in self.label_to_idx.items()}
+        self.index_to_prefix = {idx: prefix for prefix, idx in self.prefix_to_index.items()}
+        self.index_to_suffix = {idx: suffix for suffix, idx in self.suffix_to_index.items()}
+
+        # initiate unknown mappings for word tokens
+        self._init_unknown_mappings()
+
+    def get_padding_index(self) -> int:
+        return self.get_token_idx(WORD_PAD)
+
+    def get_padding_symbol(self) -> str:
+        return WORD_PAD
