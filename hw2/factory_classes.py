@@ -3,7 +3,7 @@ import torch.utils.data as data
 
 from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM
 from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding
-from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor
+from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor, GreedyLSTMPredictorForNER
 from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig
 from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset
 from trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
@@ -139,13 +139,21 @@ class PredictorsFactory(object):
 
         if predictor_type == "window_ner":
             return WindowNERTaggerPredictor(mapper)
+
         elif predictor_type == "window_pos":
             return WindowModelPredictor(mapper)
+
         elif predictor_type == "acceptor":
             return AcceptorPredictor(mapper)
+
         elif "lstm" in predictor_type:
             mapper: BaseMapperWithPadding
-            return GreedyLSTMPredictor(mapper)
+
+            if "_ner" in predictor_type:
+                return GreedyLSTMPredictorForNER(mapper)
+
+            if "_pos" in predictor_type:
+                return GreedyLSTMPredictor(mapper)
 
 
 class DatasetsFactory(object):
@@ -161,15 +169,15 @@ class DatasetsFactory(object):
             else:
                 return WindowDataset(file_path, mapper, window_size)
 
+        if "lstm" in dataset_type:
+            sequence_length = parameters_dict["sequence_length"]
+            mapper: BaseMapperWithPadding
+            return BiLSTMDataset(file_path, mapper, sequence_length)
+
         if dataset_type == "acceptor":
             sequence_length = parameters_dict["sequence_length"]
             mapper: BaseMapperWithPadding
             return RegularLanguageDataset(file_path, mapper, sequence_length)
-
-        if dataset_type == "lstm_embeddings":
-            sequence_length = parameters_dict["sequence_length"]
-            mapper: BaseMapperWithPadding
-            return BiLSTMDataset(file_path, mapper, sequence_length)
 
     def get_from_dataset_name(self, dataset_name, file_path, mapper, window_size=2, sequence_length=65):
 
