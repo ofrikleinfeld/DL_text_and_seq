@@ -6,20 +6,36 @@ import torch.utils.data as data
 from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, BEGIN, END
 
 
-class WindowDataset(data.Dataset):
+class BaseDataset(data.Dataset):
+    def __init__(self, filepath: str, mapper: BaseMapper):
+        super().__init__()
+        self.filepath = filepath
+        self.mapper = mapper
+        self.samples = []
+        self.labels = []
+
+    def _init_dataset(self) -> None:
+        raise NotImplementedError("A dataset class must implement a method to read the dataset to memory")
+
+    def init_dataset_if_not_initiated(self) -> None:
+        if len(self.samples) == 0:
+            self._init_dataset()
+
+    def __len__(self) -> int:
+        self.init_dataset_if_not_initiated()
+        return len(self.samples)
+
+
+class WindowDataset(BaseDataset):
     """
     Pytorch's Dataset derived class to create data sample from
     a path to a file
     """
     def __init__(self, filepath: str, mapper: BaseMapper, window_size: int = 2):
-        super().__init__()
-        self.filepath = filepath
-        self.mapper = mapper
+        super().__init__(filepath, mapper)
         self.window_size = window_size
-        self.samples = []
-        self.labels = []
 
-    def _load_file(self) -> None:
+    def _init_dataset(self) -> None:
         curr_sent = []
         curr_labels = []
         with open(self.filepath, "r", encoding="utf8") as f:
@@ -56,17 +72,8 @@ class WindowDataset(data.Dataset):
         for label in labels:
             self.labels.append(label)
 
-    def __len__(self) -> int:
-        # perform lazy evaluation of data loading
-        if len(self.samples) == 0:
-            self._load_file()
-
-        return len(self.samples)
-
     def __getitem__(self, item_idx: int) -> (torch.tensor, torch.tensor):
-        # lazy evaluation of data loading
-        if len(self.samples) == 0:
-            self._load_file()
+        self.init_dataset_if_not_initiated()
 
         # retrieve sample and transform from tokens to indices
         sample = self.samples[item_idx]
@@ -103,7 +110,7 @@ class WindowWithSubWordsDataset(WindowDataset):
             self.prefixes.append(current_prefix)
             self.suffixes.append(current_suffix)
 
-    def _load_file(self) -> None:
+    def _init_dataset(self) -> None:
         curr_sent = []
         curr_labels = []
         curr_prefixes = []
@@ -137,9 +144,8 @@ class WindowWithSubWordsDataset(WindowDataset):
                     curr_suffixes.append(suffix)
                     curr_sent.append(word)
 
-    def __getitem__(self, item_idx: int) -> (tuple, torch.tensor):
-        if len(self.samples) == 0:
-            self._load_file()
+    def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
+        self.init_dataset_if_not_initiated()
 
         # retrieve sample and transform from tokens to indices
         self.mapper: TokenMapperWithSubWords
@@ -166,16 +172,13 @@ class WindowWithSubWordsDataset(WindowDataset):
         return x, y
 
 
-class RegularLanguageDataset(data.Dataset):
+class RegularLanguageDataset(BaseDataset):
 
     def __init__(self, filepath: str, mapper: BaseMapperWithPadding, sequence_length: int = 65):
-        self.filepath = filepath
-        self.mapper = mapper
+        super().__init__(filepath, mapper)
         self.sequence_length = sequence_length
-        self.samples = []
-        self.labels = []
 
-    def _load_file(self) -> None:
+    def _init_dataset(self) -> None:
         with open(self.filepath, "r", encoding="utf8") as f:
             for line in f:
                 sample, label = line[:-1].split(self.mapper.split_char)
@@ -185,6 +188,7 @@ class RegularLanguageDataset(data.Dataset):
 
     def _prune_or_pad_sample(self, sample: str) -> str:
         # padding or pruning
+        self.mapper: BaseMapperWithPadding
         const_len_sample: str
         sample_length = len(sample)
 
@@ -197,17 +201,8 @@ class RegularLanguageDataset(data.Dataset):
 
         return const_len_sample
 
-    def __len__(self) -> int:
-        # perform lazy evaluation of data loading
-        if len(self.samples) == 0:
-            self._load_file()
-
-        return len(self.samples)
-
     def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
-        # lazy evaluation of data loading
-        if len(self.samples) == 0:
-            self._load_file()
+        self.init_dataset_if_not_initiated()
 
         # retrieve sample and transform from tokens to indices
         sample = self.samples[item_idx]
@@ -222,25 +217,18 @@ class RegularLanguageDataset(data.Dataset):
         return x, y
 
 
-class BiLSTMDataset(data.Dataset):
+class BiLSTMDataset(BaseDataset):
     def __init__(self, filepath: str, mapper: BaseMapperWithPadding, sequence_length: int = 65):
-        self.filepath = filepath
-        self.mapper = mapper
+        super().__init__(filepath, mapper)
         self.sequence_length = sequence_length
-        self.samples = []
-        self.labels = []
-        self.lengths_hist = {}
 
-    def _load_file(self) -> None:
+    def _init_dataset(self) -> None:
         with open(self.filepath, "r", encoding="utf8") as f:
             curr_sentence = []
             curr_labels = []
             for line in f:
 
                 if line == "\n":  # empty line denotes end of a sentence
-                    # update information about raw sentences lengths
-                    if curr_sentence != ["-DOCSTART-"]:
-                        self._update_info_on_sequence_length(curr_sentence)
 
                     # now add padding
                     if len(curr_labels) > 0:
@@ -266,17 +254,8 @@ class BiLSTMDataset(data.Dataset):
                     word = tokens[0]
                     curr_sentence.append(word)
 
-    def __len__(self) -> int:
-        # perform lazy evaluation of data loading
-        if len(self.samples) == 0:
-            self._load_file()
-
-        return len(self.samples)
-
     def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
-        # lazy evaluation of data loading
-        if len(self.samples) == 0:
-            self._load_file()
+        self.init_dataset_if_not_initiated()
 
         # check if we have labels or it is a blind test set
         if len(self.labels) > 0:
@@ -295,6 +274,7 @@ class BiLSTMDataset(data.Dataset):
 
     def _prune_or_pad_sample(self, sample: List[str]) -> List[str]:
         # padding or pruning
+        self.mapper: BaseMapperWithPadding
         const_len_sample: List[str]
         sample_length = len(sample)
 
@@ -306,12 +286,18 @@ class BiLSTMDataset(data.Dataset):
 
         return const_len_sample
 
-    def _update_info_on_sequence_length(self, sample: List[str]) -> None:
-        sequence_length = len(sample)
-        self.lengths_hist[sequence_length] = self.lengths_hist.get(sequence_length, 0) + 1
-
     def get_dataset_max_sequence_length(self):
-        return max(self.lengths_hist.keys())
+        max_sequence_length = 0
+        with open(self.filepath, "r", encoding="utf8") as f:
+            current_sequence_length = 0
+            for line in f:
+                if line == "\n":  # empty line denotes end of a sentence
+                    max_sequence_length = max(max_sequence_length, current_sequence_length)
+                    current_sequence_length = 0
+                else:
+                    current_sequence_length += 1
+
+        return max_sequence_length
 
 
 class BiLSTMWithSubWordsDataset(BiLSTMDataset):
@@ -321,7 +307,7 @@ class BiLSTMWithSubWordsDataset(BiLSTMDataset):
         self.prefixes = []
         self.suffixes = []
 
-    def _load_file(self) -> None:
+    def _init_dataset(self) -> None:
         with open(self.filepath, "r", encoding="utf8") as f:
             curr_sentence = []
             curr_prefixes = []
@@ -368,8 +354,7 @@ class BiLSTMWithSubWordsDataset(BiLSTMDataset):
                     curr_suffixes.append(suffix)
 
     def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
-        if len(self.samples) == 0:
-            self._load_file()
+        self.init_dataset_if_not_initiated()
 
         # retrieve sample and transform from tokens to indices
         self.mapper: TokenMapperWithSubWordsWithPadding
