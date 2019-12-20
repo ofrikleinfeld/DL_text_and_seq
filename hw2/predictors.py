@@ -10,7 +10,7 @@ class BasePredictor(object):
     def __init__(self, mapper: BaseMapper):
         self.mapper = mapper
 
-    def infer_model_outputs(self, model_outputs: torch.tensor):
+    def infer_model_outputs(self, model_outputs: torch.tensor) -> torch.tensor:
         raise NotImplementedError("A class deriving from BasePredictor must implement infer_model_outputs method")
 
     def infer_sample(self, model: torch.nn.Module, tokens_indices: torch.tensor):
@@ -27,20 +27,13 @@ class BasePredictor(object):
         return self.infer_sample(model, sample_tokens)
 
     def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> Tuple[int, int]:
-        num_correct = 0
-        num_predictions = 0
-        gold_labels = []
-        for label_idx in labels:
-            gold_labels.append(label_idx.item())
+        num_correct: int
+        num_predictions: int
 
-        predictions = self.infer_model_outputs(model_outputs)
-        for i in range(len(predictions)):
-            current_prediction = predictions[i]
-            current_label = gold_labels[i]
-            num_predictions += 1
-
-            if current_prediction == current_label:
-                num_correct += 1
+        num_predictions = len(labels)
+        predictions: torch.tensor = self.infer_model_outputs(model_outputs)
+        correct_predictions: torch.tensor = (predictions == labels).type(torch.int64)
+        num_correct = torch.sum(correct_predictions).item()
 
         return num_correct, num_predictions
 
@@ -50,15 +43,10 @@ class WindowModelPredictor(BasePredictor):
     def __init__(self, mapper: BaseMapper):
         super().__init__(mapper)
 
-    def infer_model_outputs(self, model_outputs: torch.tensor):
-        predictions = []
+    def infer_model_outputs(self, model_outputs: torch.tensor) -> torch.tensor:
         _, labels_tokens = torch.max(model_outputs, dim=1)
 
-        for i in range(len(model_outputs)):  # every sample in case of batch (even batch of size 1)
-            current_prediction = labels_tokens[i].item()
-            predictions.append(current_prediction)
-
-        return predictions
+        return labels_tokens
 
 
 class WindowNERTaggerPredictor(WindowModelPredictor):
@@ -66,26 +54,27 @@ class WindowNERTaggerPredictor(WindowModelPredictor):
     def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> (int, int):
         # special case of unbalanced labels
         # don't compute accuracy over trivial cases of the 'O' tag
-        num_correct = 0
-        num_predictions = 0
-        gold_labels = []
-        for label_idx in labels:
-            gold_labels.append(label_idx.item())
+        num_correct: int
+        num_predictions: int
 
-        predictions = self.infer_model_outputs(model_outputs)
-        for i in range(len(predictions)):
-            current_prediction = predictions[i]
-            current_label = gold_labels[i]
+        predictions: torch.tensor = self.infer_model_outputs(model_outputs)
+        O_tag_label = self.mapper.get_label_idx('O')
+        labels_mask = (labels == O_tag_label).type(torch.int64)
+        predictions_mask = (predictions == O_tag_label).type(torch.int64)
 
-            # don't count cases where predicated label and gold label are 'O'
-            # get the index of the label 'O'
-            outside_index = self.mapper.get_label_idx('O')
-            if not (current_label == outside_index and current_prediction == outside_index):
+        # both of the masks has value 1 when the gold label or predicted label is O
+        # we don't want to count cases where both masks has value 1 so we will multiply them
+        # finally, these are the samples we DO NOT want to count, so we will flip the result
+        O_tag_mask = 1 - (labels_mask * predictions_mask)
 
-                if current_prediction == current_label:
-                    num_correct += 1
+        # now O_tag_mask contains all samples where the gold label is not 'O' or the predicated label is not O
+        # number of predictions is just a sum of this tensor
+        num_predictions = torch.sum(O_tag_mask).item()
 
-                num_predictions += 1
+        # now check num correct and multiply with mask
+        correct_predictions_raw: torch.tensor = (predictions == labels).type(torch.int64)
+        correct_predictions: torch.tensor = correct_predictions_raw * O_tag_mask
+        num_correct = torch.sum(correct_predictions).item()
 
         return num_correct, num_predictions
 
@@ -95,15 +84,10 @@ class AcceptorPredictor(BasePredictor):
     def __init__(self, mapper: BaseMapper):
         super().__init__(mapper)
 
-    def infer_model_outputs(self, model_outputs: torch.tensor) -> List[int]:
-        predictions = []
+    def infer_model_outputs(self, model_outputs: torch.tensor) -> torch.tensor:
         _, labels_tokens = torch.max(model_outputs, dim=1)
 
-        for i in range(len(model_outputs)):  # every sample in case of batch (even batch of size 1)
-            current_prediction = labels_tokens[i].item()
-            predictions.append(current_prediction)
-
-        return predictions
+        return labels_tokens
 
 
 class GreedyLSTMPredictor(BasePredictor):
