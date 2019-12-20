@@ -67,6 +67,9 @@ class BaseMapperWithPadding(BaseMapper):
     def get_padding_index(self) -> int:
         raise NotImplementedError("Mapper with padding needs to implement get padding index")
 
+    def get_label_padding_index(self) -> int:
+        raise NotImplementedError("Mapper with padding needs to implement get label padding index")
+
     def get_padding_symbol(self) -> str:
         raise NotImplementedError("Mapper with padding needs to implement get padding symbol")
 
@@ -429,6 +432,9 @@ class TokenMapperUnkCategoryWithPadding(TokenMapperUnkCategory, BaseMapperWithPa
     def get_padding_index(self) -> int:
         return self.get_token_idx(WORD_PAD)
 
+    def get_label_padding_index(self) -> int:
+        return self.get_label_idx(WORD_PAD)
+
     def get_padding_symbol(self) -> str:
         return WORD_PAD
 
@@ -461,6 +467,9 @@ class TokenMapperWithSubWordsWithPadding(TokenMapperWithSubWords, BaseMapperWith
 
     def get_padding_index(self) -> int:
         return self.get_token_idx(WORD_PAD)
+
+    def get_label_padding_index(self) -> int:
+        return self.get_label_idx(WORD_PAD)
 
     def get_padding_symbol(self) -> str:
         return WORD_PAD
