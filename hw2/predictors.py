@@ -121,3 +121,48 @@ class GreedyLSTMPredictor(BasePredictor):
         num_correct = torch.sum(correct_prediction_no_padding).item()
 
         return num_correct, num_predictions
+
+
+class GreedyLSTMPredictorForNER(GreedyLSTMPredictor):
+
+    def __init__(self, mapper: BaseMapperWithPadding):
+        super().__init__(mapper)
+
+    def infer_model_outputs_with_gold_labels(self, model_outputs: torch.tensor, labels: torch.tensor) -> Tuple[int, int]:
+        num_correct: int
+        num_predictions: int
+
+        # compute prediction (greedy, argmax in each time sequence)
+        predictions = self.infer_model_outputs(model_outputs)
+
+        # get the indices of the padding label and the O label
+        self.mapper: BaseMapperWithPadding
+        padding_symbol = self.mapper.get_padding_symbol()
+        label_padding_index = self.mapper.get_label_idx(padding_symbol)
+        O_tag_label = self.mapper.get_label_idx('O')
+
+        # create a mask to identify predictions and gold labels of the O tag
+        labels_mask = (labels == O_tag_label).type(torch.int64)
+        predictions_mask = (predictions == O_tag_label).type(torch.int64)
+
+        # both of the masks has value 1 when the gold label or predicted label is O
+        # we don't want to count cases where both masks has value 1 so we will multiply them
+        # finally, these are the samples we DO NOT want to count, so we will flip the result
+        O_tag_mask = 1 - (labels_mask * predictions_mask)
+
+        # create a mask to distinguish padding from real tokens
+        # results in a mask tensor with an entry of 1 where we WANT to count
+        padding_mask = (labels != label_padding_index).type(torch.int64)
+
+        # now we want to multiply the prediction mask and the O tag masks
+        # stay only with the sample we want to count
+        final_mask = O_tag_mask * padding_mask
+
+        # number of predictions is just the number of 1 entries in the mask
+        num_predictions = torch.sum(final_mask).item()
+
+        correct_predictions_raw = (predictions == labels).type(torch.int64)
+        correct_prediction = correct_predictions_raw * final_mask
+        num_correct = torch.sum(correct_prediction).item()
+
+        return num_correct, num_predictions
