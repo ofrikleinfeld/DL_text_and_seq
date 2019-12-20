@@ -3,7 +3,10 @@ import sys
 from train_script import train
 from inference_script import inference
 
-SUPPORTED_MODELS = ["window_ner", "window_pos", "acceptor", "lstm_embeddings_ner", "lstm_embeddings_pos", "lstm_sub_words_ner", "lstm_sub_words_pos"]
+SUPPORTED_MODELS = ["window_ner", "window_pos", "window_pre_trained_ner", "window_pre_trained_pos",
+                    "window_sub_words_ner", "window_sub_words_pos", "window_pre_trained_sub_words_ner",
+                    "window_pre_trained_sub_words_pos", "acceptor",
+                    "lstm_ner", "lstm_pos", "lstm_sub_words_ner", "lstm_sub_words_pos"]
 
 if __name__ == '__main__':
 
@@ -27,6 +30,8 @@ if __name__ == '__main__':
                                  help="path to a json file containing hyper parameters for training procedure")
 
     inference_parser = subparsers.add_parser('inference')
+    inference_parser.add_argument("--model_type", type=str, required=True, choices=SUPPORTED_MODELS,
+                                 help='unique name of the training procedure (used for checkpoint saving')
     inference_parser.add_argument("--test_path", type=str, required=True,
                                   help="a path to a test set file")
     inference_parser.add_argument("--trained_model_path", type=str, required=True,
@@ -49,8 +54,9 @@ if __name__ == '__main__':
 
     if mode == "inference":
         test_path = args.test_path
+        model_type = args.model_type
         trained_model_path = args.trained_model_path
         inference_config_path = args.inference_config_path
         save_output_path = args.save_output_path
 
-        inference(test_path, inference_config_path, trained_model_path, save_output_path)
+        inference(test_path, inference_config_path, trained_model_path, save_output_path, model_type)
