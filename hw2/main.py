@@ -1,5 +1,6 @@
 import argparse
 import sys
+
 from train_script import train
 from inference_script import inference
 
