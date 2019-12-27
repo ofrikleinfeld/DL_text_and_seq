@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch.utils.data as data
 
-from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM, BiLSTMWithSubWords
-from mappers import BaseMapper, TokenMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding, TokenMapperWithSubWordsWithPadding
+from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM, BiLSTMWithSubWords, BiLSTMWithChars
+from mappers import BaseMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithPadding
 from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor, GreedyLSTMPredictorForNER
-from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig
-from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset
+from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig, RNNWithCharsEmbeddingsConfig
+from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset, BiLSTMWithCharsDataset
 from trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
 
 
@@ -25,6 +25,10 @@ class ConfigsFactory(object):
             return RNNConfig()
 
         if "lstm" in config_type:
+
+            if "char_embeddings" in config_type:
+                return RNNWithCharsEmbeddingsConfig()
+
             return RNNConfig()
 
 
@@ -54,6 +58,9 @@ class MappersFactory(object):
 
             if "sub_words" in mapper_name:
                 return TokenMapperWithSubWordsWithPadding(min_frequency, split_char)
+
+            elif "char_embeddings" in mapper_name:
+                return TokenMapperWithCharsWithPadding(min_frequency, split_char)
 
             else:
                 return TokenMapperUnkCategoryWithPadding(min_frequency, split_char)
@@ -104,6 +111,10 @@ class ModelsFactory(object):
             if with_sub_words:
                 mapper: TokenMapperWithSubWordsWithPadding
                 return BiLSTMWithSubWords(model_config, mapper)
+
+            elif "char_embeddings" in model_name:
+                mapper: TokenMapperWithCharsWithPadding
+                return BiLSTMWithChars(model_config, mapper)
 
             else:
                 mapper: BaseMapperWithPadding
@@ -165,6 +176,15 @@ class DatasetsFactory(object):
             if "sub_words" in dataset_type:
                 mapper: TokenMapperWithSubWordsWithPadding
                 return BiLSTMWithSubWordsDataset(file_path, mapper, sequence_length)
+
+            if "char_embeddings" in dataset_type:
+                if "char_sequence_length" in config:
+                    char_sequence_length = config["char_sequence_length"]
+                else:
+                    char_sequence_length = 10
+
+                mapper: TokenMapperWithCharsWithPadding
+                return BiLSTMWithCharsDataset(file_path, mapper, sequence_length, char_sequence_length)
 
             else:
                 mapper: BaseMapperWithPadding
