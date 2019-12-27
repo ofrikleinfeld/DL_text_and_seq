@@ -88,6 +88,13 @@ class RNNConfig(ModelConfig):
             self.config["hidden_dim"] = hidden_dim
 
 
+class RNNWithCharsEmbeddingsConfig(RNNConfig):
+    def __init__(self, config_dict=None, embedding_dim: int = 50, hidden_dim: int = 150, char_hidden_dim: int = 50):
+        super().__init__(config_dict, embedding_dim, hidden_dim)
+        if config_dict is None:
+            self.config["char_hidden_dim"] = char_hidden_dim
+
+
 class TrainingConfig(BaseConfig):
     """
     Configuration class to store training and data loading configurations.

@@ -2,7 +2,8 @@ import re
 from collections import OrderedDict
 
 UNK = "UNK"
-CHAR_PAD = "*"
+UNK_CHAR = "_"
+CHAR_PAD = "|"
 WORD_PAD = "PADDDDDDDD"
 BEGIN = "<s>"
 END = "</s>"
@@ -475,7 +476,7 @@ class TokenMapperWithSubWordsWithPadding(TokenMapperWithSubWords, BaseMapperWith
         return WORD_PAD
 
 
-class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapperUnkCategory):
+class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapper):
 
     def __init__(self, min_frequency: int = 0, split_char="\t"):
         super().__init__(min_frequency, split_char)
@@ -494,9 +495,9 @@ class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapperUnkCateg
                     line_tokens = line[:-1].split(self.split_char)  # remove end of line
                     word = line_tokens[0]
                     label = line_tokens[1]
+                    labels[label] = 0
                     for c in word:
-                       char_frequencies[c] = char_frequencies.get(c, 0) + 1
-                       labels[label] = 0
+                        char_frequencies[c] = char_frequencies.get(c, 0) + 1
 
         # remove word below min_frequency
         chars = self._remove_non_frequent(char_frequencies)
@@ -517,20 +518,16 @@ class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapperUnkCateg
             self.label_to_idx[label] = index
             self.idx_to_label[index] = label
 
-
     def _init_mappings(self) -> None:
 
         # init mappings with padding_index
         self.token_to_idx[CHAR_PAD] = len(self.token_to_idx)
+        self.token_to_idx[UNK_CHAR] = len(self.token_to_idx)
         self.label_to_idx[CHAR_PAD] = len(self.label_to_idx)
-
 
         # update the index -> token dictionaries
         self.idx_to_token = {idx: token for token, idx in self.token_to_idx.items()}
         self.idx_to_label = {idx: label for label, idx in self.label_to_idx.items()}
-
-        # initiate unknown mappings for word tokens
-        self._init_unknown_mappings()
 
     def get_padding_index(self) -> int:
         return self.get_token_idx(CHAR_PAD)
@@ -540,3 +537,11 @@ class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapperUnkCateg
 
     def get_padding_symbol(self) -> str:
         return CHAR_PAD
+
+    def get_token_idx(self, raw_token: str) -> int:
+        # usual case - word appears in mapping dictionary (seen in train)
+        if raw_token in self.token_to_idx:
+            return self.token_to_idx[raw_token]
+
+        # if word doesn't appear - assign the index of unknown
+        return self.token_to_idx[UNK_CHAR]

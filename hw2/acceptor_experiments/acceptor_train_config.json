@@ -1,5 +1,5 @@
 {
-	"batch_size": 64,
+	"batch_size": 120,
 	"num_workers": 12,
 	"device": "cuda",
 	"num_epochs": 10,
@@ -8,5 +8,5 @@
 	"checkpoints_path": "acceptor_experiments/regex_lan",
 	"min_frequency": 0,
 	"split_char" : "\t",
-	"sequence_length": 65
+	"sequence_length": 70
 }
