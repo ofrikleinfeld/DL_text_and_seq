@@ -537,3 +537,11 @@ class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapper):
 
     def get_padding_symbol(self) -> str:
         return CHAR_PAD
+
+    def get_token_idx(self, raw_token: str) -> int:
+        # usual case - word appears in mapping dictionary (seen in train)
+        if raw_token in self.token_to_idx:
+            return self.token_to_idx[raw_token]
+
+        # if word doesn't appear - assign the index of unknown
+        return self.token_to_idx[UNK_CHAR]
