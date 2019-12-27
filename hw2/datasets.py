@@ -3,7 +3,7 @@ from typing import Tuple, List
 import torch
 import torch.utils.data as data
 
-from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, BEGIN, END
+from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithPadding,BEGIN, END
 
 
 class BaseDataset(data.Dataset):
@@ -380,3 +380,80 @@ class BiLSTMWithSubWordsDataset(BiLSTMDataset):
             y = torch.tensor([])
 
         return x, y
+
+
+class BiLSTMWithCharsDataset(BiLSTMDataset):
+
+    def __init__(self, filepath: str, mapper: TokenMapperWithSubWordsWithPadding, sequence_length: int = 65, chars_length = 10):
+        super().__init__(filepath, mapper, sequence_length)
+        self.chars_length = chars_length
+
+
+    def _init_dataset(self) -> None:
+        with open(self.filepath, "r", encoding="utf8") as f:
+            curr_chars = []
+            curr_labels = []
+            for line in f:
+                if line == "\n":  # empty line denotes end of a sentence
+                    # add padding
+                    if len(curr_labels) > 0:
+                        curr_labels = self._prune_or_pad_sample(curr_labels)
+                        self.labels.append(curr_labels)
+                        curr_labels = []
+                    # anyway add padding to word prefix and suffix tokens
+                    curr_chars = self._prune_or_pad_chars(curr_chars)
+                    # append to list of samples and continue to next sentence
+                    self.samples.append(curr_chars)
+                    curr_chars = []
+                else:
+                    # append word, chars, and label to current sentence
+                    tokens = line[:-1].split(self.mapper.split_char)
+                    if len(tokens) == 2:
+                        # we also have labels
+                        label = tokens[1]
+                        curr_labels.append(label)
+                    # anyway we have word token to predict
+                    word = tokens[0]
+                    chars = [c for c in word]
+                    curr_chars.append(chars)
+
+    def _prune_or_pad_chars(self, chars: List[List[str]]) -> List[List[str]]:
+        # padding or pruning
+        self.mapper: TokenMapperWithCharsWithPadding
+        const_len_chars = []
+        for char_word in chars:
+            word_length = len(char_word)
+            if word_length > self.chars_length:
+                const_len_chars += [char_word[:self.chars_length]]
+            else:
+                padding_length = self.chars_length - word_length
+                const_len_chars += [char_word + [self.mapper.get_padding_symbol()] * padding_length]
+        sample_length = len(chars)
+        if sample_length > self.sequence_length:
+            const_len_chars = const_len_chars[:self.sequence_length]
+        else:
+            padding_length = self.sequence_length - sample_length
+            const_len_chars = const_len_chars + [[self.mapper.get_padding_symbol()] * self.chars_length] * padding_length
+        return const_len_chars
+
+    def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
+        self.init_dataset_if_not_initiated()
+
+        # retrieve sample and transform from tokens to indices
+        self.mapper: TokenMapperWithCharsWithPadding
+        sample = self.samples[item_idx]
+        sample_indices = [[self.mapper.get_token_idx(c) for c in word] for word in sample]
+
+        sample_indices = torch.tensor(sample_indices)
+        x = sample_indices
+
+        # verify if it a train/dev dataset of a test dataset
+        if len(self.labels) > 0:  # we have labels
+            labels = self.labels[item_idx]
+            labels_indices = [self.mapper.get_label_idx(label) for label in labels]
+            y = torch.tensor(labels_indices)
+        else:
+            y = torch.tensor([])
+
+        return x, y
+

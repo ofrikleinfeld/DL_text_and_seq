@@ -473,3 +473,70 @@ class TokenMapperWithSubWordsWithPadding(TokenMapperWithSubWords, BaseMapperWith
 
     def get_padding_symbol(self) -> str:
         return WORD_PAD
+
+
+class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapperUnkCategory):
+
+    def __init__(self, min_frequency: int = 0, split_char="\t"):
+        super().__init__(min_frequency, split_char)
+
+    def create_mapping(self, filepath: str) -> None:
+        char_frequencies = OrderedDict()
+        labels = OrderedDict()
+
+        with open(filepath, "r", encoding="utf8") as f:
+            for line in f:
+                # skip empty line (end of sentence)
+                if line == "\n":
+                    continue
+
+                else:
+                    line_tokens = line[:-1].split(self.split_char)  # remove end of line
+                    word = line_tokens[0]
+                    label = line_tokens[1]
+                    for c in word:
+                       char_frequencies[c] = char_frequencies.get(c, 0) + 1
+                       labels[label] = 0
+
+        # remove word below min_frequency
+        chars = self._remove_non_frequent(char_frequencies)
+
+        # init mappings with padding and unknown indices
+        self._init_mappings()
+
+        # start index will be different if index 0 marked already as padding
+        char_start_index = len(self.token_to_idx)
+        label_start_index = len(self.label_to_idx)
+
+        # transform token to indices
+        for index, c in enumerate(chars.keys(), char_start_index):
+            self.token_to_idx[c] = index
+            self.idx_to_token[index] = c
+
+        for index, label in enumerate(labels.keys(), label_start_index):
+            self.label_to_idx[label] = index
+            self.idx_to_label[index] = label
+
+
+    def _init_mappings(self) -> None:
+
+        # init mappings with padding_index
+        self.token_to_idx[CHAR_PAD] = len(self.token_to_idx)
+        self.label_to_idx[CHAR_PAD] = len(self.label_to_idx)
+
+
+        # update the index -> token dictionaries
+        self.idx_to_token = {idx: token for token, idx in self.token_to_idx.items()}
+        self.idx_to_label = {idx: label for label, idx in self.label_to_idx.items()}
+
+        # initiate unknown mappings for word tokens
+        self._init_unknown_mappings()
+
+    def get_padding_index(self) -> int:
+        return self.get_token_idx(CHAR_PAD)
+
+    def get_label_padding_index(self) -> int:
+        return self.get_label_idx(CHAR_PAD)
+
+    def get_padding_symbol(self) -> str:
+        return CHAR_PAD
