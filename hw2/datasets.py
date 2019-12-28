@@ -471,6 +471,7 @@ class BiLSTMWithCharsDataset(BiLSTMDataset):
 
         return x, y
 
+
 class BiLSTMWithCharsAndWordDataset(BiLSTMDataset):
 
     def __init__(self, filepath: str, mapper: TokenMapperWithCharsWithWordsWithPadding, sequence_length: int = 65, chars_length: int = 10):
@@ -517,7 +518,7 @@ class BiLSTMWithCharsAndWordDataset(BiLSTMDataset):
 
     def _prune_or_pad_chars(self, word: List[str]) -> List[str]:
         # padding or pruning
-        self.mapper: BaseMapperWithPadding
+        self.mapper: TokenMapperWithCharsWithWordsWithPadding
         const_len_word: List[str]
         word_length = len(word)
 
@@ -525,13 +526,13 @@ class BiLSTMWithCharsAndWordDataset(BiLSTMDataset):
             const_len_word = word[:self.chars_length]
         else:
             padding_length = self.chars_length - word_length
-            const_len_word = word + [self.mapper.get_padding_symbol()] * padding_length
+            const_len_word = word + [self.mapper.get_char_padding_symbol()] * padding_length
 
         return const_len_word
 
     def _prune_or_pad_characters_sample(self, sample: List[List[str]]) -> List[List[str]]:
         # padding or pruning
-        self.mapper: BaseMapperWithPadding
+        self.mapper: TokenMapperWithCharsWithWordsWithPadding
         const_len_sample: List[List[str]]
         sample_length = len(sample)
 
@@ -539,7 +540,7 @@ class BiLSTMWithCharsAndWordDataset(BiLSTMDataset):
             const_len_sample = sample[:self.sequence_length]
         else:
             padding_length = self.sequence_length - sample_length
-            padding_word = [self.mapper.get_padding_symbol()] * self.chars_length
+            padding_word = [self.mapper.get_char_padding_symbol()] * self.chars_length
             const_len_sample = sample + [padding_word] * padding_length
 
         return const_len_sample
@@ -558,7 +559,7 @@ class BiLSTMWithCharsAndWordDataset(BiLSTMDataset):
 
         sample_indices = torch.tensor(sample_indices)
         chars_sample_indices = torch.tensor(char_sample_indices)
-        x = torch.cat([chars_sample_indices,sample_indices.view(-1,1)], dim=1)
+        x = torch.cat([chars_sample_indices, sample_indices.view(-1, 1)], dim=1)
 
         # verify if it a train/dev dataset of a test dataset
         if len(self.labels) > 0:  # we have labels

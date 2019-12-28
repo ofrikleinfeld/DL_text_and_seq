@@ -314,8 +314,8 @@ class BiLSTMWithCharsAndWords(BaseModel):
         self.linear = nn.Linear(in_features=self.hidden_dim * 2, out_features=self.labels_dim)
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-        chars_x = x[:,:,:-1]
-        words_x = x[:,:,-1]
+        chars_x = x[:, :, :-1]
+        words_x = x[:, :, -1]
 
         char_embeddings = self.chars_embedding(chars_x)
         batch, word_sequence, char_sequence, features = char_embeddings.size()
