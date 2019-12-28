@@ -1,0 +1,16 @@
+{
+	"model_type": "ner",
+	"batch_size": 64,
+	"num_workers": 12,
+	"device": "cpu",
+	"num_epochs": 5,
+	"print_step": 500,
+    "learning_rate": 1e-3,
+	"checkpoints_path": "experiments/ner_simple",
+	"min_frequency": 5,
+	"split_char" : "\t",
+	"window_size": 2,
+	"pre_trained_embeddings": "false",
+	"sub_word_units": "false",
+	"smart_unknown": "true"
+}
