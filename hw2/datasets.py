@@ -527,6 +527,7 @@ class BiLSTMWithCharsAndWordDataset(BiLSTMDataset):
         else:
             padding_length = self.chars_length - word_length
             const_len_word = word + [self.mapper.get_char_padding_symbol()] * padding_length
+            const_len_word = word + [self.mapper.get_padding_symbol()] * padding_length
 
         return const_len_word
 
@@ -570,5 +571,4 @@ class BiLSTMWithCharsAndWordDataset(BiLSTMDataset):
             y = torch.tensor([])
 
         return x, y
-
 

@@ -119,6 +119,12 @@ class ModelsFactory(object):
             if with_sub_words:
                 mapper: TokenMapperWithSubWordsWithPadding
                 return BiLSTMWithSubWords(model_config, mapper)
+            elif "char_word_embeddings" in model_name:
+                mapper:TokenMapperWithCharsWithWordsWithPadding
+                return BiLSTMWithCharsAndWords(model_config, mapper)
+            elif "char_embeddings" in model_name:
+                mapper: TokenMapperWithCharsWithPadding
+                return BiLSTMWithChars(model_config, mapper)
 
             elif "char_word_embeddings" in model_name:
                 mapper: TokenMapperWithCharsWithWordsWithPadding
