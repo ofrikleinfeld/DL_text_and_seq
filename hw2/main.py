@@ -8,7 +8,8 @@ SUPPORTED_MODELS = ["window_ner", "window_pos", "window_pre_trained_ner", "windo
                     "window_sub_words_ner", "window_sub_words_pos", "window_pre_trained_sub_words_ner",
                     "window_pre_trained_sub_words_pos", "acceptor",
                     "lstm_ner", "lstm_pos", "lstm_sub_words_ner", "lstm_sub_words_pos",
-                    "lstm_char_embeddings_ner", "lstm_char_embeddings_pos"]
+                    "lstm_char_embeddings_ner", "lstm_char_embeddings_pos",
+                    "lstm_char_word_embeddings_ner", "lstm_char_word_embeddings_pos"]
 
 if __name__ == '__main__':
 

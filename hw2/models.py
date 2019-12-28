@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from configs import ModelConfig, WindowTaggerConfig, RNNConfig, RNNWithCharsEmbeddingsConfig
-from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithPadding
+from configs import ModelConfig, WindowTaggerConfig, RNNConfig, RNNWithCharsEmbeddingsConfig, RNNWithCharsWithWordsEmbeddingsConfig
+from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding
 
 
 class BaseModel(nn.Module):
@@ -281,6 +281,57 @@ class BiLSTMWithChars(BaseModel):
 
         # now we are in the same situation as always - batch, sequence, features
         rnn_features, _ = self.LSTM(word_embeddings)
+
+        # RNN outputs has dimensions batch, sequence_length, features (features is num_directions * hidden dim)
+        y_hat = self.linear(rnn_features)
+
+        # Cross Entropy loss expects dimensions of type batch, features, sequence
+        y_hat = y_hat.permute(0, 2, 1)
+        return y_hat
+
+
+class BiLSTMWithCharsAndWords(BaseModel):
+
+    def __init__(self, config: RNNWithCharsWithWordsEmbeddingsConfig, mapper: TokenMapperWithCharsWithWordsWithPadding):
+        super().__init__(config, mapper)
+        self.chars_dim = mapper.get_chars_dim()
+        self.words_dim = mapper.get_tokens_dim()
+        self.labels_dim = mapper.get_labels_dim()
+        self.char_padding_idx = mapper.get_char_padding_index()
+        self.padding_idx = mapper.get_padding_index()
+        self.word_embedding_dim = config["embedding_dim"]
+        self.char_embedding_dim = config["char_embedding_dim"]
+        self.hidden_dim = config["hidden_dim"]
+        self.char_hidden_dim = config["char_hidden_dim"]
+
+        self.chars_embedding = nn.Embedding(self.chars_dim, self.char_embedding_dim,  padding_idx=self.char_padding_idx)
+        self.words_embedding = nn.Embedding(self.words_dim,  self.word_embedding_dim, padding_idx=self.padding_idx)
+
+        self.LSTM_c = nn.LSTM(input_size=self.char_embedding_dim, hidden_size=self.char_hidden_dim,
+                              num_layers=1, bidirectional=False, batch_first=True)
+        self.LSTM = nn.LSTM(input_size=(self.word_embedding_dim + self.char_hidden_dim), hidden_size=self.hidden_dim,
+                            num_layers=2, bidirectional=True, dropout=0.5, batch_first=True)
+        self.linear = nn.Linear(in_features=self.hidden_dim * 2, out_features=self.labels_dim)
+
+    def forward(self, x: torch.tensor) -> torch.tensor:
+        chars_x = x[:,:,:-1]
+        words_x = x[:,:,-1]
+
+        char_embeddings = self.chars_embedding(chars_x)
+        batch, word_sequence, char_sequence, features = char_embeddings.size()
+
+        # fold word sequence dimension into batch dimension
+        char_embeddings = char_embeddings.view(batch * word_sequence, char_sequence, features)
+        _, (chars_last_hidden, _) = self.LSTM_c(char_embeddings)
+
+        # now expand back
+        word_chars_embeddings = chars_last_hidden.view(batch, word_sequence, self.char_hidden_dim)
+
+        word_embeddings = self.words_embedding(words_x)
+
+        concat_word_embeddings = torch.cat([word_chars_embeddings,word_embeddings], dim=2)
+        # now we are in the same situation as always - batch, sequence, features
+        rnn_features, _ = self.LSTM(concat_word_embeddings)
 
         # RNN outputs has dimensions batch, sequence_length, features (features is num_directions * hidden dim)
         y_hat = self.linear(rnn_features)
