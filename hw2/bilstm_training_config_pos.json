@@ -1,0 +1,11 @@
+{
+	"batch_size": 64
+	,"num_workers": 12
+	,"device": "cpu"
+	,"num_epochs": 5
+	,"print_step": 500
+    ,"learning_rate": 4e-3
+	,"checkpoints_path": "."
+	,"checkpoint_step": 30
+	,"split_char" : " "
+}
