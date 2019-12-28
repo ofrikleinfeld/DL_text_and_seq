@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch.utils.data as data
 
-from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM, BiLSTMWithSubWords, BiLSTMWithChars
-from mappers import BaseMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithPadding
+from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM, BiLSTMWithSubWords, BiLSTMWithChars, BiLSTMWithCharsAndWords
+from mappers import BaseMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding
 from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor, GreedyLSTMPredictorForNER
-from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig, RNNWithCharsEmbeddingsConfig
-from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset, BiLSTMWithCharsDataset
+from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig, RNNWithCharsEmbeddingsConfig, RNNWithCharsWithWordsEmbeddingsConfig
+from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset, BiLSTMWithCharsDataset, BiLSTMWithCharsAndWordDataset
 from trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
 
 
@@ -25,8 +25,9 @@ class ConfigsFactory(object):
             return RNNConfig()
 
         if "lstm" in config_type:
-
-            if "char_embeddings" in config_type:
+            if "char_word_embeddings" in config_type:
+                return RNNWithCharsWithWordsEmbeddingsConfig()
+            elif "char_embeddings" in config_type:
                 return RNNWithCharsEmbeddingsConfig()
 
             return RNNConfig()
@@ -58,6 +59,13 @@ class MappersFactory(object):
 
             if "sub_words" in mapper_name:
                 return TokenMapperWithSubWordsWithPadding(min_frequency, split_char)
+
+            elif "char_word_embeddings" in mapper_name:
+                if "char_min_frequency" in config:
+                    char_min_frequency = config["char_min_frequency"]
+                else:
+                    char_min_frequency = 0
+                return TokenMapperWithCharsWithWordsWithPadding(min_frequency, split_char, char_min_frequency)
 
             elif "char_embeddings" in mapper_name:
                 return TokenMapperWithCharsWithPadding(min_frequency, split_char)
@@ -111,7 +119,9 @@ class ModelsFactory(object):
             if with_sub_words:
                 mapper: TokenMapperWithSubWordsWithPadding
                 return BiLSTMWithSubWords(model_config, mapper)
-
+            elif "char_word_embeddings" in model_name:
+                mapper:TokenMapperWithCharsWithWordsWithPadding
+                return BiLSTMWithCharsAndWords(model_config, mapper)
             elif "char_embeddings" in model_name:
                 mapper: TokenMapperWithCharsWithPadding
                 return BiLSTMWithChars(model_config, mapper)
@@ -176,6 +186,15 @@ class DatasetsFactory(object):
             if "sub_words" in dataset_type:
                 mapper: TokenMapperWithSubWordsWithPadding
                 return BiLSTMWithSubWordsDataset(file_path, mapper, sequence_length)
+
+            if "char_word_embeddings" in dataset_type:
+                if "char_sequence_length" in config:
+                    char_sequence_length = config["char_sequence_length"]
+                else:
+                    char_sequence_length = 10
+
+                mapper: TokenMapperWithCharsWithWordsWithPadding
+                return BiLSTMWithCharsAndWordDataset(file_path, mapper, sequence_length, char_sequence_length)
 
             if "char_embeddings" in dataset_type:
                 if "char_sequence_length" in config:

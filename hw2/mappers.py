@@ -545,3 +545,100 @@ class TokenMapperWithCharsWithPadding(BaseMapperWithPadding, TokenMapper):
 
         # if word doesn't appear - assign the index of unknown
         return self.token_to_idx[UNK_CHAR]
+
+
+class TokenMapperWithCharsWithWordsWithPadding(TokenMapperUnkCategoryWithPadding):
+
+    def __init__(self, min_frequency: int = 0, split_char="\t", char_min_frequency: int = 0):
+        super().__init__(min_frequency, split_char)
+        self.char_to_idx = {}
+        self.idx_to_char = {}
+        self.char_min_frequency = char_min_frequency
+
+    def create_mapping(self, filepath: str) -> None:
+        char_frequencies = OrderedDict()
+        words_frequencies = OrderedDict()
+        labels = OrderedDict()
+
+        with open(filepath, "r", encoding="utf8") as f:
+            for line in f:
+                # skip empty line (end of sentence)
+                if line == "\n":
+                    continue
+
+                else:
+                    line_tokens = line[:-1].split(self.split_char)  # remove end of line
+                    word = line_tokens[0]
+                    label = line_tokens[1]
+                    labels[label] = 0
+                    words_frequencies[word] = words_frequencies.get(word, 0) + 1
+                    for c in word:
+                        char_frequencies[c] = char_frequencies.get(c, 0) + 1
+
+        # remove word below min_frequency
+        words = self._remove_non_frequent(words_frequencies)
+        chars = self._remove_non_frequent_chars(char_frequencies)
+
+        # init mappings with padding and unknown indices
+        self._init_mappings()
+
+        # start index will be different if index 0 marked already as padding
+        word_start_index = len(self.token_to_idx)
+        char_start_index = len(self.char_to_idx)
+        label_start_index = len(self.label_to_idx)
+
+        # transform token to indices
+        for index, word in enumerate(words.keys(), word_start_index):
+            self.token_to_idx[word] = index
+            self.idx_to_token[index] = word
+
+        for index, c in enumerate(chars.keys(), char_start_index):
+            self.char_to_idx[c] = index
+            self.idx_to_char[index] = c
+
+        for index, label in enumerate(labels.keys(), label_start_index):
+            self.label_to_idx[label] = index
+            self.idx_to_label[index] = label
+
+    def _init_mappings(self) -> None:
+        super()._init_mappings()
+        # init mappings with padding_index
+        self.char_to_idx[CHAR_PAD] = len(self.char_to_idx)
+        self.char_to_idx[UNK_CHAR] = len(self.char_to_idx)
+        self.label_to_idx[CHAR_PAD] = len(self.label_to_idx)
+
+        # update the index -> token dictionaries
+        self.idx_to_char = {idx: token for token, idx in self.char_to_idx.items()}
+        self.idx_to_label = {idx: label for label, idx in self.label_to_idx.items()}
+
+    def get_char_padding_index(self) -> int:
+        return self.get_char_idx(CHAR_PAD)
+
+    def get_char_label_padding_index(self) -> int:
+        return self.get_label_idx(CHAR_PAD)
+
+    def get_char_padding_symbol(self) -> str:
+        return CHAR_PAD
+
+    def get_char_idx(self, raw_token: str) -> int:
+        # usual case - word appears in mapping dictionary (seen in train)
+        if raw_token in self.char_to_idx:
+            return self.char_to_idx[raw_token]
+
+        # if word doesn't appear - assign the index of unknown
+        return self.char_to_idx[UNK_CHAR]
+
+    def get_char_from_idx(self, index: int) -> str:
+        return self.idx_to_char[index]
+
+    def _remove_non_frequent_chars(self, chars_frequencies) -> dict:
+        # remove word below min_frequency
+        chars = OrderedDict()
+        for char, frequency in chars_frequencies.items():
+            if frequency >= self.char_min_frequency:
+                chars[char] = 0
+
+        return chars
+
+    def get_chars_dim(self) -> int:
+        return len(self.char_to_idx)
