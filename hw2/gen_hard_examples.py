@@ -80,6 +80,49 @@ def generate_examples_prime(pattern: str, n: int) -> List[str]:
     return list(examples)
 
 
+
+def generate_positive_example_palindrome():
+   n = randint(1,20)
+   left = ''
+   right = ''
+   for i in range(n):
+       r = randint(0,1)
+       if r == 0:
+           left += 'a'
+           right = 'a' + right
+       else:
+           left += 'b'
+           right = 'b' + right
+   if randint(0,1) == 0:
+        left += 'c'
+   return (left +  right)
+
+
+def generate_negative_example_palindrome():
+   n = randint(1,41)
+   s = ''
+   for i in range(n):
+       r = randint(1,3)
+       if r == 1:
+           s += 'a'
+       elif r == 2:
+           s += 'b'
+       elif r == 3:
+           s += 'c'
+   return s
+
+def generate_examples_palindrome(pattern: str, n: int) -> List[str]:
+    examples = set()
+    if pattern == POSITIVE_PATTERN:
+        generator = generate_positive_example_palindrome
+    else:
+        generator = generate_negative_example_palindrome
+    while len(examples) != n:
+        s = generator()
+        examples.add(s)
+    return list(examples)
+
+
 def write_examples_to_file(examples: List[str], output_path: str, labels: List[int] = None) -> None:
     with open(output_path, "w") as f:
         if labels is not None:
@@ -131,7 +174,7 @@ if __name__ == '__main__':
     generate_examples_parser.add_argument("--type", type=str, required=True, metavar="positive",choices=["positive", "negative"], help="generate example from a specific type")
     generate_examples_parser.add_argument("--n", type=int, required=True, metavar="500", help="number of examples to generate")
     generate_examples_parser.add_argument("--output_path", type=str, required=True, help="path to a file to save results to")
-    generate_examples_parser.add_argument("--generator_type", type=str, required=False, choices=["equal", "prime"],
+    generate_examples_parser.add_argument("--generator_type", type=str, required=False, choices=["equal", "prime", "palindrome"],
                                           help="which type of hard examples to generate")
     # create the parser for the generate datasets command
     generate_datasets_parser = subparsers.add_parser('train_test')
@@ -139,7 +182,7 @@ if __name__ == '__main__':
     generate_datasets_parser.add_argument("--train_output_path", type=str, required=False, help="path to a file to save generated training data")
     generate_datasets_parser.add_argument("--num_test", type=int, required=True, metavar="500", help="number of training examples to generate")
     generate_datasets_parser.add_argument("--test_output_path", type=str, required=False, help="path to a file to save generated training data")
-    generate_datasets_parser.add_argument("--generator_type", type=str, required=False, choices = ["equal", "prime"],
+    generate_datasets_parser.add_argument("--generator_type", type=str, required=False, choices = ["equal", "prime", "palindrome"],
                                           help="which type of hard examples to generate")
 
     # parse the arguments
@@ -160,6 +203,8 @@ if __name__ == '__main__':
             generate_examples = generate_examples_equal
         elif generator_type == 'prime':
             generate_examples = generate_examples_prime
+        elif generator_type == 'palindrome':
+            generate_examples = generate_examples_palindrome
         generated_examples = generate_examples(type_pattern, num_examples)
         write_examples_to_file(generated_examples, examples_path)
 
@@ -173,5 +218,7 @@ if __name__ == '__main__':
             generate_examples = generate_examples_equal
         elif generator_type == 'prime':
             generate_examples = generate_examples_prime
+        elif generator_type == 'palindrome':
+            generate_examples = generate_examples_palindrome
 
         generate_training_test_sets(num_training, train_output_path, num_test, test_output_path, generate_examples)
