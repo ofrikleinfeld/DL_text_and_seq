@@ -1,20 +1,37 @@
 import argparse
 import sys
 from typing import List
-from random import shuffle
+from random import shuffle, randint, sample
 
-import rstr
+POSITIVE_PATTERN = 'equal'
+NEGATIVE_PATTERN = 'non_equal'
 
-POSITIVE_PATTERN = r"[1-9]+a+[1-9]+b+[1-9]+c+[1-9]+d+[1-9]+"
-NEGATIVE_PATTERN = r"[1-9]+a+[1-9]+c+[1-9]+b+[1-9]+d+[1-9]+"
 
+def generate_positive_sample():
+    randnum = randint(1, 20)
+    s = ('a' * randnum) + ('b' * randnum)
+    s = ''.join(sample(s, len(s)))
+    return s
+
+def generate_negative_sample():
+    randnum_1 = randnum_2 = 0
+    while randnum_1 == randnum_2:
+        randnum_1 = randint(1, 20)
+        randnum_2 = randint(1, 20)
+    s = ('a' * randnum_1) + ('b' * randnum_2)
+    s = ''.join(sample(s, len(s)))
+    return s
 
 def generate_examples(pattern: str, n: int) -> List[str]:
-    examples = []
-    for i in range(n):
-        examples.append(rstr.xeger(pattern))
-
-    return examples
+    examples = set()
+    if pattern == 'equal':
+        generator = generate_positive_sample
+    else:
+        generator = generate_negative_sample
+    while len(examples) != n:
+        s = generator()
+        examples.add(s)
+    return list(examples)
 
 
 def write_examples_to_file(examples: List[str], output_path: str, labels: List[int] = None) -> None:
