@@ -303,14 +303,18 @@ class BiLSTMWithCharsAndWords(BaseModel):
         self.char_embedding_dim = config["char_embedding_dim"]
         self.hidden_dim = config["hidden_dim"]
         self.char_hidden_dim = config["char_hidden_dim"]
+        self.linear_embeds_out_dim = config["linear_embeds_out_dim"]
 
         self.chars_embedding = nn.Embedding(self.chars_dim, self.char_embedding_dim,  padding_idx=self.char_padding_idx)
         self.words_embedding = nn.Embedding(self.words_dim,  self.word_embedding_dim, padding_idx=self.padding_idx)
 
         self.LSTM_c = nn.LSTM(input_size=self.char_embedding_dim, hidden_size=self.char_hidden_dim,
                               num_layers=1, bidirectional=False, batch_first=True)
-        self.LSTM = nn.LSTM(input_size=(self.word_embedding_dim + self.char_hidden_dim), hidden_size=self.hidden_dim,
+        self.liner_embeds = nn.Linear(in_features=(self.word_embedding_dim + self.char_hidden_dim), out_features=self.linear_embeds_out_dim)
+        self.tanh = nn.Tanh()
+        self.LSTM = nn.LSTM(input_size=self.linear_embeds_out_dim, hidden_size=self.hidden_dim,
                             num_layers=2, bidirectional=True, dropout=0.5, batch_first=True)
+
         self.linear = nn.Linear(in_features=self.hidden_dim * 2, out_features=self.labels_dim)
 
     def forward(self, x: torch.tensor) -> torch.tensor:
@@ -330,6 +334,9 @@ class BiLSTMWithCharsAndWords(BaseModel):
         word_embeddings = self.words_embedding(words_x)
 
         concat_word_embeddings = torch.cat([word_chars_embeddings,word_embeddings], dim=2)
+
+        concat_word_embeddings = self.tanh(self.liner_embeds(concat_word_embeddings))
+
         # now we are in the same situation as always - batch, sequence, features
         rnn_features, _ = self.LSTM(concat_word_embeddings)
 

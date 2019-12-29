@@ -97,10 +97,11 @@ class RNNWithCharsEmbeddingsConfig(RNNConfig):
 
 class RNNWithCharsWithWordsEmbeddingsConfig(RNNWithCharsEmbeddingsConfig):
     def __init__(self, config_dict=None, embedding_dim: int = 50, hidden_dim: int = 150, char_hidden_dim: int = 50,
-                 char_embedding_dim: int = 50):
+                 char_embedding_dim: int = 50, linear_embeds_out_dim: int = 200):
         super().__init__(config_dict, embedding_dim, hidden_dim, char_hidden_dim)
         if config_dict is None:
             self.config["char_embedding_dim"] = char_embedding_dim
+            self.config["linear_embeds_out_dim"] = linear_embeds_out_dim
 
 
 class TrainingConfig(BaseConfig):
