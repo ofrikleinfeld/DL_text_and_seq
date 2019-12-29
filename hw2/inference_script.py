@@ -106,12 +106,12 @@ def inference(test_path: str, inference_config_path: str, saved_model_path: str,
                 # special case for character embeddings
                 if "char_embeddings" in model_type:
                     batch_size, num_words, chars_in_word = x.size()
-                    padding_word = torch.tensor([padding_index] * chars_in_word, dtype=torch.uint8).to(device)
 
                     # fold num words dimension into batch dimension
                     all_batch_words = x.view(batch_size * num_words, chars_in_word)
+
                     # a valid word is a word that has at least 1 char that is not the char padding
-                    real_tokens_mask = ~torch.all(torch.eq(all_batch_words, padding_word), dim=1)
+                    real_tokens_mask = ~torch.all(all_batch_words == padding_index, dim=1)
 
                 elif "char_word_embeddings" in model_type:
                     words_x = x[:, :, -1]
