@@ -113,6 +113,9 @@ def inference(test_path: str, inference_config_path: str, saved_model_path: str,
                     # a valid word is a word that has at least 1 char that is not the char padding
                     real_tokens_mask = ~torch.all(torch.eq(all_batch_words, padding_word), dim=1)
 
+                elif "char_word_embeddings" in model_type:
+                    words_x = x[:, :, -1]
+                    real_tokens_mask = (words_x != padding_index).flatten()
                 else:
                     if len(x.size()) == 3:
                         real_tokens_mask = (x[:, 0, :] != padding_index).flatten()
