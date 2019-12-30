@@ -102,13 +102,15 @@ def generate_negative_example_palindrome():
    n = randint(1,41)
    s = ''
    for i in range(n):
-       r = randint(1,3)
+       r = randint(1,2)
        if r == 1:
            s += 'a'
        elif r == 2:
            s += 'b'
-       elif r == 3:
-           s += 'c'
+   r = randint(0,1)
+   if r == 0:
+       rand_idx = sample(list(range(len(s))), 1)[0]
+       s = s[:rand_idx] + 'c' + s[rand_idx:]
    return s
 
 def generate_examples_palindrome(pattern: str, n: int) -> List[str]:
