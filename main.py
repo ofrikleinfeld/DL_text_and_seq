@@ -1,8 +1,8 @@
 import argparse
 import sys
 
-from train_script import train
-from inference_script import inference
+from pos_and_ner.train_script import train
+from pos_and_ner.inference_script import inference
 
 SUPPORTED_MODELS = ["window_ner", "window_pos", "window_pre_trained_ner", "window_pre_trained_pos",
                     "window_sub_words_ner", "window_sub_words_pos", "window_pre_trained_sub_words_ner",

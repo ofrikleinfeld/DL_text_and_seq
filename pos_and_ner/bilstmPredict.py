@@ -1,7 +1,7 @@
 import sys
 import argparse
 
-from inference_script import inference
+from pos_and_ner.inference_script import inference
 
 if __name__ == '__main__':
 

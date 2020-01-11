@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from configs import ModelConfig, WindowTaggerConfig, RNNConfig, RNNWithCharsEmbeddingsConfig, RNNWithCharsWithWordsEmbeddingsConfig
-from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding
+from pos_and_ner.configs import ModelConfig, WindowTaggerConfig, RNNConfig, RNNWithCharsEmbeddingsConfig, RNNWithCharsWithWordsEmbeddingsConfig
+from pos_and_ner.mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding
 
 
 class BaseModel(nn.Module):

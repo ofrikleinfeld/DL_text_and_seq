@@ -1,7 +1,7 @@
 import sys
 import argparse
 
-from train_script import train
+from pos_and_ner.train_script import train
 
 if __name__ == '__main__':
 

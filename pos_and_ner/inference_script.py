@@ -1,11 +1,11 @@
 import torch
 from torch.utils import data
 
-from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
-from models import BaseModel
-from mappers import BaseMapper, BaseMapperWithPadding
-from configs import BaseConfig, ModelConfig
-from datasets import BiLSTMDataset
+from pos_and_ner.factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
+from pos_and_ner.models import BaseModel
+from pos_and_ner.mappers import BaseMapper, BaseMapperWithPadding
+from pos_and_ner.configs import BaseConfig, ModelConfig
+from pos_and_ner.datasets import BiLSTMDataset
 
 
 def load_trained_model(path_to_pth_file: str, model_type: str):

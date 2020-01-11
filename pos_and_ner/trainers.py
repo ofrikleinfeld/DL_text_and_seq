@@ -6,9 +6,9 @@ import time
 import torch
 from torch.utils import data
 
-from models import BaseModel
-from configs import TrainingConfig
-from predictors import BasePredictor
+from pos_and_ner.models import BaseModel
+from pos_and_ner.configs import TrainingConfig
+from pos_and_ner.predictors import BasePredictor
 
 
 class ModelTrainer(object):

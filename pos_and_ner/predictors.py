@@ -1,8 +1,8 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import torch
 
-from mappers import BaseMapper, BaseMapperWithPadding
+from pos_and_ner.mappers import BaseMapper, BaseMapperWithPadding
 
 
 class BasePredictor(object):

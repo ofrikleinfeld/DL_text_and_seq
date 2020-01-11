@@ -1,12 +1,12 @@
 import torch.nn as nn
 import torch.utils.data as data
 
-from models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM, BiLSTMWithSubWords, BiLSTMWithChars, BiLSTMWithCharsAndWords
-from mappers import BaseMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding
-from predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor, GreedyLSTMPredictorForNER
-from configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig, RNNWithCharsEmbeddingsConfig, RNNWithCharsWithWordsEmbeddingsConfig
-from datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset, BiLSTMWithCharsDataset, BiLSTMWithCharsAndWordDataset
-from trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
+from pos_and_ner.models import BaseModel, WindowTagger, WindowModelWithPreTrainedEmbeddings, WindowModelWithSubWords, AcceptorLSTM, BasicBiLSTM, BiLSTMWithSubWords, BiLSTMWithChars, BiLSTMWithCharsAndWords
+from pos_and_ner.mappers import BaseMapper, TokenMapperUnkCategory, TokenMapperWithSubWords, BaseMapperWithPadding, RegularLanguageMapper, TokenMapperUnkCategoryWithPadding, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding
+from pos_and_ner.predictors import BasePredictor, WindowModelPredictor, WindowNERTaggerPredictor, AcceptorPredictor, GreedyLSTMPredictor, GreedyLSTMPredictorForNER
+from pos_and_ner.configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig, RNNWithCharsEmbeddingsConfig, RNNWithCharsWithWordsEmbeddingsConfig
+from pos_and_ner.datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset, BiLSTMWithCharsDataset, BiLSTMWithCharsAndWordDataset
+from pos_and_ner.trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
 
 
 class ConfigsFactory(object):

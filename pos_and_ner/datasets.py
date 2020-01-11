@@ -3,7 +3,7 @@ from typing import Tuple, List
 import torch
 import torch.utils.data as data
 
-from mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding,BEGIN, END
+from pos_and_ner.mappers import BaseMapper, BaseMapperWithPadding, TokenMapperWithSubWords, TokenMapperWithSubWordsWithPadding, TokenMapperWithCharsWithWordsWithPadding, TokenMapperWithCharsWithPadding,BEGIN, END
 
 
 class BaseDataset(data.Dataset):
