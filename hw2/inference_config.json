@@ -1,6 +1,5 @@
 {
-	"model_type": "ner",
-	"batch_size": 32
+	"batch_size": 200
 	,"num_workers": 12
 	,"device": "cuda"
 }
