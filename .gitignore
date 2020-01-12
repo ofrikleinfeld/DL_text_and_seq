@@ -136,3 +136,6 @@ pos_and_ner/test_results
 
 # ignore pretrained vocabolary
 pos_and_ner/pretraind_vocab
+
+# ignore SNLI data
+SNLI/snli_1.0/*

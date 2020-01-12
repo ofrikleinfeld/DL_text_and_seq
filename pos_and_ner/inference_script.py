@@ -1,7 +1,7 @@
 import torch
 from torch.utils import data
 
-from pos_and_ner.factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
+from factory_classes import ModelsFactory, MappersFactory, ConfigsFactory, PredictorsFactory, DatasetsFactory
 from pos_and_ner.models import BaseModel
 from pos_and_ner.mappers import BaseMapper, BaseMapperWithPadding
 from pos_and_ner.configs import BaseConfig, ModelConfig

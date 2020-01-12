@@ -1,4 +1,4 @@
-from pos_and_ner.factory_classes import ConfigsFactory, MappersFactory, ModelsFactory, PredictorsFactory, DatasetsFactory, TrainerFactory, LossFunctionFactory
+from factory_classes import ConfigsFactory, MappersFactory, ModelsFactory, PredictorsFactory, DatasetsFactory, TrainerFactory, LossFunctionFactory
 
 
 def train(training_unique_name: str, model_type: str, train_path: str, dev_path: str,
