@@ -139,3 +139,6 @@ pos_and_ner/pretraind_vocab
 
 # ignore SNLI data
 SNLI/snli_1.0/*
+SNLI/glove.42B.300d.txt
+SNLI/glove_vectors.txt
+SNLI/glove_words.txt
