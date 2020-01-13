@@ -1,0 +1,12 @@
+{
+	"batch_size": 40,
+	"num_workers": 12,
+	"device": "cuda",
+	"num_epochs": 30,
+	"print_step": 100,
+    "learning_rate": 5e-2,
+	"checkpoints_path": "SNLI/experiments",
+	"min_frequency": 0,
+	"split_char" : "\t",
+	"sequence_length": 25
+}

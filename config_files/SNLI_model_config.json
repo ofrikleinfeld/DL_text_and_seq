@@ -1,0 +1,6 @@
+{
+	"hidden_dim": 200,
+	"embedding_dim": 300,
+	"pre_trained_words_path": "SNLI/glove_words.txt",
+	"pre_trained_vectors_path": "SNLI/glove_vectors.txt"
+}
