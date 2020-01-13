@@ -14,13 +14,21 @@ class SNLIDecomposeAttentionVanillaModel(ModelWithPreTrainedEmbeddings):
                  pre_trained_vocab_path: str = None, pre_trained_embedding_path: str = None):
         super().__init__(config, mapper)
 
+        # re-initialize to embedding layer to incorporate padding index
+        self.tokens_dim = mapper.get_tokens_dim()
+        embedding_dim = config["embedding_dim"]
+        self.embedding = nn.Embedding(self.tokens_dim, self.embedding_dim, padding_idx=self.mapper.get_padding_index())
+
         # load glove pre-trained embeddings if needed
         if pre_trained_vocab_path is not None:
-            self.self.load_pre_trained_embeddings(pre_trained_vocab_path, pre_trained_embedding_path)
+            pass
+        self.load_pre_trained_embeddings(pre_trained_vocab_path, pre_trained_embedding_path)
+
+        # mark the embedding layer as fixed, with no gradient updates
+        self.embedding.weight.requires_grad = False
 
         # define layers sizes according to dataset and paper
         labels_dim = mapper.get_labels_dim()
-        embedding_dim = config["embedding_dim"]
         hidden_dim = config["hidden_dim"]
 
         # define layer or MLP composed from few layers
