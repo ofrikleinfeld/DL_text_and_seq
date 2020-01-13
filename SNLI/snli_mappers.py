@@ -1,4 +1,4 @@
-import random
+import hashlib
 from typing import Dict
 from collections import OrderedDict
 
@@ -90,7 +90,7 @@ class SNLIMapperWithGloveIndices(BaseMapperWithPadding):
         so we need 10 different "unknown" tokens
         """
         unk_template = UNK + "_{idx}"
-        unk_tokens = {unk_template.format(i): i for i in range(10)}
+        unk_tokens = {unk_template.format(i): i for i in range(100)}
         self.token_to_idx.update(unk_tokens)
         self.idx_to_token = {value: key for key, value in self.token_to_idx.items()}
 
@@ -100,9 +100,14 @@ class SNLIMapperWithGloveIndices(BaseMapperWithPadding):
         self.idx_to_token[padding_idx] = WORD_PAD
 
     def get_token_idx(self, raw_token: str) -> int:
-        if raw_token not in self.token_to_idx:
-            unknown_idx = random.randint(0, 9)
-            unknown_token = f"{UNK}_{unknown_idx}"
+        lower_raw_token = raw_token.lower()
+        if lower_raw_token not in self.token_to_idx:
+
+            # compute hash bucket - one of 100 buckets
+            hash_object = hashlib.sha256(lower_raw_token.encode("utf-8"))
+            hex_dig = hash_object.hexdigest()
+            bucket = int(hex_dig, 16) % 100
+            unknown_token = f"{UNK}_{bucket}"
             raw_token = unknown_token
 
         return self.token_to_idx[raw_token]
