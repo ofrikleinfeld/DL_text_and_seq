@@ -7,8 +7,8 @@ from pos_and_ner.mappers import UNK, WORD_PAD, BaseMapperWithPadding
 
 class SNLIMapperWithGloveIndices(BaseMapperWithPadding):
 
-    def __init__(self, glove_words_path: str, split_char: str = " "):
-        min_frequency = 0  # we want to take every word from the training set, because we use fixed, pre trained, embeddings
+    def __init__(self, glove_words_path: str, split_char: str = "\t"):
+        min_frequency = 0  # we want to take every word from the raining set, because we use fixed, pre trained, embeddings
         super().__init__(min_frequency=min_frequency, split_char=split_char)
         self.unknown_label_symbol = "-"
         self.word_to_glove_idx = {}

@@ -76,3 +76,4 @@ class SNLIDecomposeAttentionVanillaModel(ModelWithPreTrainedEmbeddings):
         output = self.classification_layer(hidden_output)
 
         return output
+
