@@ -42,14 +42,14 @@ class SNLIMapperWithGloveIndices(BaseMapperWithPadding):
             # skip samples with unknown label - i.e "-" label
             if label != self.unknown_label_symbol:
 
-                sentence_1 = line_tokens[5].split(" ")
-                sentence_2 = line_tokens[6].split(" ")
+                sentence_1 = [word.lower() for word in line_tokens[5].split()]
+                sentence_2 = [word.lower() for word in line_tokens[6].split()]
 
                 labels[label] = 0
-                for word in sentence_1:
-                    words[word] = 0
-                for word in sentence_2:
-                    words[word] = 0
+                sentences_words = sentence_1 + sentence_2
+                for word in sentences_words:
+                    if word not in words:
+                        words[word] = 0
 
         # only take into account words the appear in training set
         # and has glove pre trained vector
