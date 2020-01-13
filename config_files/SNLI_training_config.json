@@ -6,7 +6,9 @@
 	"print_step": 100,
     "learning_rate": 5e-2,
 	"checkpoints_path": "SNLI/experiments",
-	"min_frequency": 0,
 	"split_char" : "\t",
-	"sequence_length": 25
+	"min_frequency": 10,
+	"sequence_length": 25,
+	"pre_trained_words_path": "SNLI/glove_words.txt",
+	"pre_trained_vectors_path": "SNLI/glove_vectors.txt"
 }
