@@ -91,12 +91,12 @@ class MappersFactory(object):
                 pre_trained_words_path = config["pre_trained_words_path"]
             else:
                 pre_trained_words_path = ""
-            return SNLIMapperWithGloveIndices(pre_trained_words_path)
+            return SNLIMapperWithGloveIndices(min_frequency, split_char, pre_trained_words_path)
 
 
 class ModelsFactory(object):
 
-    def __call__(self, parameters_dict: BaseConfig, model_config: ModelConfig, mapper: BaseMapper, model_name: str) -> BaseModel:
+    def __call__(self, parameters_dict: TrainingConfig, model_config: ModelConfig, mapper: BaseMapper, model_name: str) -> BaseModel:
 
         if "window" in model_name:
             # flags
@@ -164,9 +164,9 @@ class ModelsFactory(object):
         if model_name.startswith("SNLI"):
             model_config: SNLIDecomposeAttentionVanillaConfig
             mapper: SNLIMapperWithGloveIndices
-            if "pre_trained_words_path" in model_config and "pre_trained_vectors_path in model_config" in model_config:
-                pre_trained_words_path = model_config["pre_trained_words_path"]
-                pre_trained_vectors_path = model_config["pre_trained_vectors_path"]
+            if "pre_trained_words_path" in parameters_dict and "pre_trained_vectors_path" in parameters_dict:
+                pre_trained_words_path = parameters_dict["pre_trained_words_path"]
+                pre_trained_vectors_path = parameters_dict["pre_trained_vectors_path"]
                 return SNLIDecomposeAttentionVanillaModel(model_config, mapper, pre_trained_words_path, pre_trained_vectors_path)
 
             else:
