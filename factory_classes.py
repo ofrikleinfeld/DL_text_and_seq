@@ -7,6 +7,11 @@ from pos_and_ner.predictors import BasePredictor, WindowModelPredictor, WindowNE
 from pos_and_ner.configs import BaseConfig, ModelConfig, TrainingConfig, WindowTaggerConfig, InferenceConfig, RNNConfig, RNNWithCharsEmbeddingsConfig, RNNWithCharsWithWordsEmbeddingsConfig
 from pos_and_ner.datasets import WindowDataset, WindowWithSubWordsDataset, RegularLanguageDataset, BiLSTMDataset, BiLSTMWithSubWordsDataset, BiLSTMWithCharsDataset, BiLSTMWithCharsAndWordDataset
 from pos_and_ner.trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
+from SNLI.snli_configs import SNLIDecomposeAttentionVanillaConfig
+from SNLI.snli_mappers import SNLIMapperWithGloveIndices
+from SNLI.snli_models import SNLIDecomposeAttentionVanillaModel
+from SNLI.snli_predictors import SNLIPredictor
+from SNLI.snli_datasets import SNLIDataset
 
 
 class ConfigsFactory(object):
@@ -31,6 +36,9 @@ class ConfigsFactory(object):
                 return RNNWithCharsEmbeddingsConfig()
 
             return RNNConfig()
+
+        if config_type.startswith("SNLI"):
+            return SNLIDecomposeAttentionVanillaConfig()
 
 
 class MappersFactory(object):
@@ -76,6 +84,14 @@ class MappersFactory(object):
         if mapper_name == "acceptor":
 
             return RegularLanguageMapper(min_frequency, split_char)
+
+        if mapper_name.startswith("SNLI"):
+            config: SNLIDecomposeAttentionVanillaConfig
+            if "pre_trained_words_path" in config:
+                pre_trained_words_path = config["pre_trained_words_path"]
+            else:
+                pre_trained_words_path = ""
+            return SNLIMapperWithGloveIndices(pre_trained_words_path)
 
 
 class ModelsFactory(object):
@@ -145,6 +161,17 @@ class ModelsFactory(object):
             mapper: RegularLanguageMapper
             return AcceptorLSTM(model_config, mapper)
 
+        if model_name.startswith("SNLI"):
+            model_config: SNLIDecomposeAttentionVanillaConfig
+            mapper: SNLIMapperWithGloveIndices
+            if "pre_trained_words_path" in model_config and "pre_trained_vectors_path in model_config" in model_config:
+                pre_trained_words_path = model_config["pre_trained_words_path"]
+                pre_trained_vectors_path = model_config["pre_trained_vectors_path"]
+                return SNLIDecomposeAttentionVanillaModel(model_config, mapper, pre_trained_words_path, pre_trained_vectors_path)
+
+            else:
+                return SNLIDecomposeAttentionVanillaModel(model_config, mapper)
+
 
 class PredictorsFactory(object):
     def __call__(self, parameters_dict: BaseConfig, mapper: BaseMapper, predictor_type: str) -> BasePredictor:
@@ -167,6 +194,9 @@ class PredictorsFactory(object):
 
         elif predictor_type == "acceptor":
             return AcceptorPredictor(mapper)
+
+        elif predictor_type.startswith("SNLI"):
+            return SNLIPredictor(mapper)
 
 
 class DatasetsFactory(object):
@@ -229,6 +259,16 @@ class DatasetsFactory(object):
             mapper: BaseMapperWithPadding
             return RegularLanguageDataset(file_path, mapper, sequence_length)
 
+        if dataset_type.startswith("SNLI"):
+            mapper: SNLIMapperWithGloveIndices
+
+            if "sequence_length" in config:
+                sequence_length = config["sequence_length"]
+            else:
+                sequence_length = 25
+
+            return SNLIDataset(file_path, mapper, sequence_length)
+
 
 class TrainerFactory(object):
     def __call__(self, model: BaseModel, train_config: TrainingConfig,
@@ -243,6 +283,9 @@ class TrainerFactory(object):
 
         if model_type == "acceptor":
             return AcceptorTrainer(model, train_config, predictor, loss_function)
+
+        if model_type.startswith("SNLI"):
+            return ModelTrainer(model, train_config, predictor, loss_function)
 
 
 class LossFunctionFactory(object):
@@ -260,3 +303,5 @@ class LossFunctionFactory(object):
         if model_type == "acceptor":
             return nn.CrossEntropyLoss()
 
+        if model_type.startswith("SNLI"):
+            return nn.CrossEntropyLoss()
