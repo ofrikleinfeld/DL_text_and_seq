@@ -20,17 +20,17 @@ class SNLIDataset(BaseDataset):
                     header_line = False
                     continue
 
-            line_tokens = line[:-1].split(self.mapper.split_char)  # remove end of line
-            label = line_tokens[0]
-            if label != self.mapper.unknown_label_symbol:
+                line_tokens = line[:-1].split(self.mapper.split_char)  # remove end of line
+                label = line_tokens[0]
+                if label != self.mapper.unknown_label_symbol:
 
-                sentence_1 = line_tokens[5].split(" ")
-                sentence_2 = line_tokens[6].split(" ")
-                sentence_1 = self._prune_or_pad_sample(sentence_1)
-                sentence_2 = self._prune_or_pad_sample(sentence_2)
+                    sentence_1 = line_tokens[5].split(" ")
+                    sentence_2 = line_tokens[6].split(" ")
+                    sentence_1 = self._prune_or_pad_sample(sentence_1)
+                    sentence_2 = self._prune_or_pad_sample(sentence_2)
 
-                self.samples.append((sentence_1, sentence_2))
-                self.labels.append(label)
+                    self.samples.append((sentence_1, sentence_2))
+                    self.labels.append(label)
 
     def _prune_or_pad_sample(self, sample: List[str]) -> List[str]:
         # padding or pruning
@@ -51,9 +51,9 @@ class SNLIDataset(BaseDataset):
 
         # check if we have labels or it is a blind test set
         if len(self.labels) > 0:
-            labels = self.labels[item_idx]
-            labels_indices = [self.mapper.get_label_idx(label) for label in labels]
-            y = torch.tensor(labels_indices)
+            label = self.labels[item_idx]
+            label_index = self.mapper.get_label_idx(label)
+            y = torch.tensor(label_index)
         else:
             y = torch.tensor([])
 
@@ -62,7 +62,9 @@ class SNLIDataset(BaseDataset):
         sentence_1, sentence_2 = sample
         sentence_1_indices = [self.mapper.get_token_idx(word) for word in sentence_1]
         sentence_2_indices = [self.mapper.get_token_idx(word) for word in sentence_2]
+        sentence_1_tensor = torch.tensor(sentence_1_indices)
+        sentence_2_tensor = torch.tensor(sentence_2_indices)
 
-        x = (torch.tensor(sentence_1_indices), torch.tensor(sentence_2_indices))
+        x = torch.stack([sentence_1_tensor, sentence_2_tensor], dim=1)
 
         return x, y

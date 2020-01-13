@@ -3,7 +3,7 @@
 	"num_workers": 12,
 	"device": "cuda",
 	"num_epochs": 30,
-	"print_step": 100,
+	"print_step": 1000,
     "learning_rate": 5e-2,
 	"checkpoints_path": "SNLI/experiments",
 	"split_char" : "\t",
