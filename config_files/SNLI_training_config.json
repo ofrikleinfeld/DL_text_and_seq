@@ -1,14 +1,13 @@
 {
-	"batch_size": 40,
+	"batch_size": 32,
 	"num_workers": 12,
 	"device": "cuda",
-	"num_epochs": 30,
-	"print_step": 1000,
-    "learning_rate": 5e-2,
+	"num_epochs": 300,
+	"print_step": 2500,
+    "learning_rate": 0.005,
 	"checkpoints_path": "SNLI/experiments",
 	"split_char" : "\t",
-	"min_frequency": 10,
+	"min_frequency": 0,
 	"sequence_length": 25,
-	"pre_trained_words_path": "SNLI/glove_words.txt",
-	"pre_trained_vectors_path": "SNLI/glove_vectors.txt"
+	"glove_path": "SNLI/glove.840B.300d.txt"
 }

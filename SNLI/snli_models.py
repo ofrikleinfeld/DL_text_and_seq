@@ -1,27 +1,27 @@
-from typing import Tuple
+import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from pos_and_ner.models import ModelWithPreTrainedEmbeddings
+from pos_and_ner.models import ModelWithPreTrainedEmbeddings, BaseModel
 from SNLI.snli_configs import SNLIDecomposeAttentionVanillaConfig
 from SNLI.snli_mappers import SNLIMapperWithGloveIndices
 
 
 class SNLIDecomposeAttentionVanillaModel(ModelWithPreTrainedEmbeddings):
-    def __init__(self, config: SNLIDecomposeAttentionVanillaConfig, mapper: SNLIMapperWithGloveIndices,
-                 pre_trained_vocab_path: str = None, pre_trained_embedding_path: str = None):
+    def __init__(self, config: SNLIDecomposeAttentionVanillaConfig, mapper: SNLIMapperWithGloveIndices, glove_path: str = None):
         super().__init__(config, mapper)
 
         # re-initialize to embedding layer to incorporate padding index
         self.tokens_dim = mapper.get_tokens_dim()
+        print(f"Number of vocabulary tokens is: {self.tokens_dim}")
         embedding_dim = config["embedding_dim"]
         self.embedding = nn.Embedding(self.tokens_dim, self.embedding_dim, padding_idx=self.mapper.get_padding_index())
 
         # load glove pre-trained embeddings if needed
-        if pre_trained_vocab_path is not None:
-            self.load_pre_trained_embeddings(pre_trained_vocab_path, pre_trained_embedding_path)
+        if glove_path is not None:
+            self._load_pre_trained_glove(glove_path)
 
         # mark the embedding layer as fixed, with no gradient updates
         self.embedding.weight.requires_grad = False
@@ -36,6 +36,41 @@ class SNLIDecomposeAttentionVanillaModel(ModelWithPreTrainedEmbeddings):
         self.mlp_g = self._define_mlp_layer(2 * hidden_dim, hidden_dim)
         self.mlp_h = self._define_mlp_layer(2 * hidden_dim, hidden_dim)
         self.classification_layer = nn.Linear(hidden_dim, labels_dim, bias=True)
+
+    def _load_pre_trained_glove(self, glove_path: str) -> None:
+        self.mapper: SNLIMapperWithGloveIndices
+        embedding_matrix = self.embedding.weight.detach().numpy()
+
+        glove_words_sorted_indices = sorted(self.mapper.word_to_glove_idx.items(), key=lambda x: x[1])
+        total_glove_words = len(glove_words_sorted_indices)
+        current_glove_index = 0
+
+        with open(glove_path, "r", encoding="utf-8") as f:
+            for index, line in enumerate(f):
+                # we read already all words in dictionary that are also in glove vocab
+                if current_glove_index == total_glove_words:
+                    break
+
+                # skip until we find a word that also appears in vocab
+                glove_word, glove_index = glove_words_sorted_indices[current_glove_index]
+                if index != glove_index:
+                    continue
+
+                # retrieve pre-trained vector
+                line = line[:-1]  # remove end of line
+                line_tokens = line.split()
+                word = line_tokens[0]
+                vector = np.array(line_tokens[1:], dtype=np.float)
+
+                # find out the corresponding index in our initiated embedding matrix  and update it
+                word_data_vocab_index = self.mapper.token_to_idx[word]
+                embedding_matrix[word_data_vocab_index] = vector
+
+                # update to next word appearing in glove
+                current_glove_index += 1
+
+        # load the new embedding matrix as the embedding layer parameters
+        self.embedding.load_state_dict({'weight': torch.tensor(embedding_matrix)})
 
     def _define_mlp_layer(self, input_dim: int, output_dim: int) -> nn.Sequential:
         layers = [
@@ -54,10 +89,7 @@ class SNLIDecomposeAttentionVanillaModel(ModelWithPreTrainedEmbeddings):
 
         return weights
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
-        sent1 = x[:, :, 0]
-        sent2 = x[:, :, 1]
-
+    def forward(self, sent1: torch.tensor, sent2: torch.tensor) -> torch.tensor:
         # embeddings
         sent1_embeddings = self.embedding(sent1)
         sent2_embeddings = self.embedding(sent2)
@@ -98,4 +130,3 @@ class SNLIDecomposeAttentionVanillaModel(ModelWithPreTrainedEmbeddings):
         output = self.classification_layer(hidden_output)
 
         return output
-

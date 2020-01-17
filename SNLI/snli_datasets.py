@@ -46,7 +46,7 @@ class SNLIDataset(BaseDataset):
 
         return const_len_sample
 
-    def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor]:
+    def __getitem__(self, item_idx: int) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
         self.init_dataset_if_not_initiated()
 
         # check if we have labels or it is a blind test set
@@ -65,6 +65,4 @@ class SNLIDataset(BaseDataset):
         sentence_1_tensor = torch.tensor(sentence_1_indices)
         sentence_2_tensor = torch.tensor(sentence_2_indices)
 
-        x = torch.stack([sentence_1_tensor, sentence_2_tensor], dim=1)
-
-        return x, y
+        return sentence_1_tensor, sentence_2_tensor, y

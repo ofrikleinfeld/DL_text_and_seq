@@ -10,11 +10,11 @@ WORD_PAD = "paddddddddddddd"
 
 class SNLIMapperWithGloveIndices(BaseMapperWithPadding, TokenMapper):
 
-    def __init__(self, min_frequency: int = 5, split_char: str = "\t", glove_words_path: str = ""):
+    def __init__(self, min_frequency: int = 5, split_char: str = "\t", glove_path: str = ""):
         super().__init__(min_frequency=min_frequency, split_char=split_char)
         self.unknown_label_symbol = "-"
         self.word_to_glove_idx = {}
-        self.glove_words_path = glove_words_path
+        self.glove_path = glove_path
 
     def serialize(self) -> dict:
         serialization = super().serialize()
@@ -46,10 +46,10 @@ class SNLIMapperWithGloveIndices(BaseMapperWithPadding, TokenMapper):
                 # skip samples with unknown label - i.e "-" label
                 if label != self.unknown_label_symbol:
 
-                    sentence_1 = [word.lower() for word in line_tokens[5].split()]
-                    sentence_2 = [word.lower() for word in line_tokens[6].split()]
-
+                    sentence_1 = [word for word in line_tokens[5].split()]
+                    sentence_2 = [word for word in line_tokens[6].split()]
                     labels[label] = 0
+
                     sentences_words = sentence_1 + sentence_2
                     for word in sentences_words:
                         words_frequencies[word] = words_frequencies.get(word, 0) + 1
@@ -70,6 +70,9 @@ class SNLIMapperWithGloveIndices(BaseMapperWithPadding, TokenMapper):
         label_index = len(self.label_to_idx)
 
         for word in words.keys():
+            # self.token_to_idx[word] = word_index
+            # self.idx_to_token[word_index] = word
+            # word_index += 1
             # only if word has pre trained glove vector
             if word in glove_words_indices:
                 self.token_to_idx[word] = word_index
@@ -84,10 +87,19 @@ class SNLIMapperWithGloveIndices(BaseMapperWithPadding, TokenMapper):
 
     def _load_glove_words_indices(self) -> Dict[str, int]:
         pre_trained_words_indices = {}
-        with open(self.glove_words_path, "r", encoding="utf8") as f:
-            for index, word in enumerate(f):
-                word = word[:-1]  # remove end of line token
-                pre_trained_words_indices[word] = index
+        with open(self.glove_path, "r", encoding="utf8") as f:
+            for index, line in enumerate(f):
+                try:
+                    line = line[:-1]  # remove end of line
+                    line_tokens = line.split()
+
+                    # there are cases where file contains a "word" with a space
+                    # we will skip those defected lines
+                    if len(line_tokens) == 301:
+                        word = line_tokens[0]
+                        pre_trained_words_indices[word] = index
+                except ValueError:
+                    continue
 
         return pre_trained_words_indices
 
@@ -108,19 +120,16 @@ class SNLIMapperWithGloveIndices(BaseMapperWithPadding, TokenMapper):
         self.idx_to_token[padding_idx] = WORD_PAD
 
     def get_token_idx(self, raw_token: str) -> int:
-        lower_raw_token = raw_token.lower()
-        if lower_raw_token not in self.token_to_idx:
+        if raw_token not in self.token_to_idx:
 
             # compute hash bucket - one of 100 buckets
-            hash_object = hashlib.sha256(lower_raw_token.encode("utf-8"))
+            hash_object = hashlib.sha256(raw_token.encode("utf-8"))
             hex_dig = hash_object.hexdigest()
             bucket = int(hex_dig, 16) % 100
             unknown_token = f"{UNK}_{bucket}"
-            token = unknown_token
-        else:
-            token = lower_raw_token
+            raw_token = unknown_token
 
-        return self.token_to_idx[token]
+        return self.token_to_idx[raw_token]
 
     def get_label_idx(self, raw_label: str) -> int:
         return self.label_to_idx[raw_label]

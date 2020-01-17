@@ -12,6 +12,7 @@ from SNLI.snli_mappers import SNLIMapperWithGloveIndices
 from SNLI.snli_models import SNLIDecomposeAttentionVanillaModel
 from SNLI.snli_predictors import SNLIPredictor
 from SNLI.snli_datasets import SNLIDataset
+from SNLI.snli_trainers import SNLITrainer
 
 
 class ConfigsFactory(object):
@@ -87,11 +88,11 @@ class MappersFactory(object):
 
         if mapper_name.startswith("SNLI"):
             config: SNLIDecomposeAttentionVanillaConfig
-            if "pre_trained_words_path" in config:
-                pre_trained_words_path = config["pre_trained_words_path"]
+            if "glove_path" in config:
+                glove_path = config["glove_path"]
             else:
-                pre_trained_words_path = ""
-            return SNLIMapperWithGloveIndices(min_frequency, split_char, pre_trained_words_path)
+                glove_path = ""
+            return SNLIMapperWithGloveIndices(min_frequency, split_char, glove_path)
 
 
 class ModelsFactory(object):
@@ -164,10 +165,9 @@ class ModelsFactory(object):
         if model_name.startswith("SNLI"):
             model_config: SNLIDecomposeAttentionVanillaConfig
             mapper: SNLIMapperWithGloveIndices
-            if "pre_trained_words_path" in parameters_dict and "pre_trained_vectors_path" in parameters_dict:
-                pre_trained_words_path = parameters_dict["pre_trained_words_path"]
-                pre_trained_vectors_path = parameters_dict["pre_trained_vectors_path"]
-                return SNLIDecomposeAttentionVanillaModel(model_config, mapper, pre_trained_words_path, pre_trained_vectors_path)
+            if "glove_path" in parameters_dict:
+                glove_path = parameters_dict["glove_path"]
+                return SNLIDecomposeAttentionVanillaModel(model_config, mapper, glove_path)
 
             else:
                 return SNLIDecomposeAttentionVanillaModel(model_config, mapper)
@@ -285,7 +285,7 @@ class TrainerFactory(object):
             return AcceptorTrainer(model, train_config, predictor, loss_function)
 
         if model_type.startswith("SNLI"):
-            return ModelTrainer(model, train_config, predictor, loss_function)
+            return SNLITrainer(model, train_config, predictor, loss_function)
 
 
 class LossFunctionFactory(object):
