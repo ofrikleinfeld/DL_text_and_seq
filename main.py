@@ -10,7 +10,7 @@ SUPPORTED_MODELS = ["window_ner", "window_pos", "window_pre_trained_ner", "windo
                     "lstm_ner", "lstm_pos", "lstm_sub_words_ner", "lstm_sub_words_pos",
                     "lstm_char_embeddings_ner", "lstm_char_embeddings_pos",
                     "lstm_char_word_embeddings_ner", "lstm_char_word_embeddings_pos",
-                    "SNLI_attention_vanilla"]
+                    "SNLI_attention_vanilla", "SNLI_attention_intra_sent"]
 
 if __name__ == '__main__':
 

@@ -9,7 +9,7 @@ from pos_and_ner.datasets import WindowDataset, WindowWithSubWordsDataset, Regul
 from pos_and_ner.trainers import ModelTrainer, AcceptorTrainer, BiLSTMTrainer
 from SNLI.snli_configs import SNLIDecomposeAttentionVanillaConfig
 from SNLI.snli_mappers import SNLIMapperWithGloveIndices
-from SNLI.snli_models import SNLIDecomposeAttentionVanillaModel
+from SNLI.snli_models import SNLIDecomposeAttentionVanillaModel, SNLIDecomposeAttentionIntraSentenceModel
 from SNLI.snli_predictors import SNLIPredictor
 from SNLI.snli_datasets import SNLIDataset
 from SNLI.snli_trainers import SNLITrainer
@@ -167,10 +167,14 @@ class ModelsFactory(object):
             mapper: SNLIMapperWithGloveIndices
             if "glove_path" in parameters_dict:
                 glove_path = parameters_dict["glove_path"]
-                return SNLIDecomposeAttentionVanillaModel(model_config, mapper, glove_path)
-
             else:
-                return SNLIDecomposeAttentionVanillaModel(model_config, mapper)
+                glove_path = None
+
+            if "vanilla" in model_name:
+                return SNLIDecomposeAttentionVanillaModel(model_config, mapper, glove_path)
+            else:
+                sequence_length = parameters_dict["sequence_length"]
+                return SNLIDecomposeAttentionIntraSentenceModel(model_config, mapper, glove_path, sequence_length)
 
 
 class PredictorsFactory(object):
