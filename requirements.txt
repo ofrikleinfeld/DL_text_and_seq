@@ -8,7 +8,7 @@ httplib2==0.14.0
 idna==2.8
 jmespath==0.9.4
 joblib==0.14.0
-numpy==1.17.4
+numpy==1.22.0
 pandas==0.25.3
 Pillow==6.2.1
 pyasn1==0.4.7
